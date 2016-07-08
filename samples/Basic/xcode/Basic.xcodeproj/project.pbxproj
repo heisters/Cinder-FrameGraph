@@ -16,6 +16,7 @@
 		00B784B60FF439BC000DE1D7 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B20FF439BC000DE1D7 /* CoreAudio.framework */; };
 		00B9955A1B128DF400A5C623 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B995581B128DF400A5C623 /* IOKit.framework */; };
 		00B9955B1B128DF400A5C623 /* IOSurface.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B995591B128DF400A5C623 /* IOSurface.framework */; };
+		3C4CFC0F1D12033500EBFD5D /* Cinder-OCIO.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C4CFC0E1D12033500EBFD5D /* Cinder-OCIO.cpp */; };
 		4D43BA0A3C14444597C394FF /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = 99997C7D678249E399DDBDAA /* CinderApp.icns */; };
 		5323E6B20EAFCA74003A9687 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B10EAFCA74003A9687 /* CoreVideo.framework */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
@@ -37,6 +38,7 @@
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		2E8078A841DF4317A340A7E4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3C4CFC0D1D109A2100EBFD5D /* Cinder-OCIO.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Cinder-OCIO.h"; sourceTree = "<group>"; };
+		3C4CFC0E1D12033500EBFD5D /* Cinder-OCIO.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "Cinder-OCIO.cpp"; sourceTree = "<group>"; };
 		5323E6B10EAFCA74003A9687 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = /System/Library/Frameworks/CoreVideo.framework; sourceTree = "<absolute>"; };
 		8D1107320486CEB800E47090 /* Basic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Basic.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		99997C7D678249E399DDBDAA /* CinderApp.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = CinderApp.icns; path = ../resources/CinderApp.icns; sourceTree = "<group>"; };
@@ -170,6 +172,7 @@
 		3C4CFC0B1D1099D100EBFD5D /* src */ = {
 			isa = PBXGroup;
 			children = (
+				3C4CFC0E1D12033500EBFD5D /* Cinder-OCIO.cpp */,
 			);
 			name = src;
 			path = ../../../src;
@@ -247,6 +250,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3C4CFC0F1D12033500EBFD5D /* Cinder-OCIO.cpp in Sources */,
 				C5FE451D2248451697B9D7B0 /* BasicApp.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
