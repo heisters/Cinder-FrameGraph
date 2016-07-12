@@ -149,6 +149,9 @@ public:
 	const ci::gl::Texture2dRef getTexture() const { return mTexture; }
 
 	operator const ci::gl::Texture2dRef () const { return getTexture(); }
+	operator const bool () const { return mTexture != nullptr; }
+
+	ci::vec2 getSize() const { return mTexture->getSize(); }
 private:
 	
 	ci::gl::Texture2dRef	mTexture = nullptr;
@@ -245,6 +248,8 @@ public:
 	QTMovieGlINode & loop( bool enabled = true ) { mMovie->setLoop( enabled ); return *this; }
 
 	virtual void update() override;
+
+	ci::vec2 getSize() const { return mMovie->getSize(); }
 
 private:
 

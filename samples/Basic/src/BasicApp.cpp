@@ -18,6 +18,7 @@ public:
 	BasicApp();
 
 	void setup() override;
+	void mouseDrag( MouseEvent event ) override;
 	void mouseDown( MouseEvent event ) override;
 	void update() override;
 	void draw() override;
@@ -27,6 +28,8 @@ private:
 	ocio::QTMovieGlINodeRef	mMovieNode;
 	ocio::TextureONodeRef	mRawOutputNode;
 	ocio::TextureONodeRef	mProcessedOutputNode;
+
+	int						mSplitX;
 };
 
 
@@ -42,18 +45,35 @@ void BasicApp::setup()
 	mMovieNode->loop();
 
 	auto process = ocio::ProcessGPUIONode::create(mConfig,
-												  ocio::core::ROLE_COMPOSITING_LOG,
-												  ocio::core::ROLE_SCENE_LINEAR
+												  "Input - Sony - S-Log2 - S-Gamut",
+												  "Output - Rec.709"
 												  );
 	mProcessedOutputNode = ocio::TextureONode::create();
 	mRawOutputNode = ocio::TextureONode::create();
 
 	mMovieNode >> process >> mProcessedOutputNode;
 	mMovieNode >> mRawOutputNode;
+
+	vec2 size = mMovieNode->getSize();
+	ivec2 dsize = getDisplay()->getSize();
+	vec2 maxSize = dsize - ivec2( 20, 20 );
+	maxSize = vec2( maxSize.x, size.y * maxSize.x / size.x );
+	setWindowSize( min( size, maxSize ) );
+	setWindowPos( (vec2)dsize * 0.5f - (vec2)getWindowSize() * 0.5f );
+
+	mSplitX = getWindowWidth() * 0.5f;
+}
+
+void BasicApp::mouseDrag( MouseEvent event )
+{
+	if ( event.isLeftDown() ) {
+		mSplitX = event.getX();
+	}
 }
 
 void BasicApp::mouseDown( MouseEvent event )
 {
+	mSplitX = event.getX();
 }
 
 void BasicApp::update()
@@ -63,9 +83,28 @@ void BasicApp::update()
 
 void BasicApp::draw()
 {
-	gl::clear( Color( 0, 0, 0 ) );
-	gl::draw( *mRawOutputNode, Rectf( vec2( 0, 0 ), (vec2)getWindowSize() * vec2( 1.f, 0.5f ) ) );
-	gl::draw( *mProcessedOutputNode, Rectf( (vec2)getWindowSize() * vec2( 0.f, 0.5f ), (vec2)getWindowSize() ) );
+	gl::clear();
+	vec2 size = getWindowSize();
+	vec2 scale = vec2( mSplitX, size.y ) / size;
+
+	if ( *mRawOutputNode ) {
+		Area src( vec2(), mRawOutputNode->getSize() * scale );
+		Rectf dst( vec2(), size * scale );
+		gl::draw( *mRawOutputNode, src, dst );
+	}
+	
+	if ( *mProcessedOutputNode ) {
+		Area src( mProcessedOutputNode->getSize() * scale * vec2( 1, 0 ), mProcessedOutputNode->getSize() );
+		Rectf dst( size * scale * vec2( 1, 0 ), size );
+		gl::draw( *mProcessedOutputNode, src, dst );
+	}
+
+
+	{
+		gl::ScopedLineWidth scp_lineWidth( 5.f );
+		gl::ScopedColor scp_color( Color( 1.f, 1.f, 1.f ) );
+		gl::drawLine( vec2( mSplitX, 0 ), vec2( mSplitX, size.y ) );
+	}
 }
 
 CINDER_APP( BasicApp, RendererGl( RendererGl::Options().msaa( 16 ) ) )
