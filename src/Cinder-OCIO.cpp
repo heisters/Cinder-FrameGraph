@@ -11,8 +11,12 @@ using namespace std;
 Config::Config( const ci::fs::path & path )
 {
 	mConfig = core::Config::CreateFromFile( path.string().c_str() );
-}
 
+	int n = mConfig->getNumColorSpaces();
+	for ( int i = 0; i < n; ++i ) {
+		mAllColorSpaceNames.push_back( string( mConfig->getColorSpaceNameByIndex( i ) ) );
+	}
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // INode

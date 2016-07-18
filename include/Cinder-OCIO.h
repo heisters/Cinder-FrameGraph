@@ -34,8 +34,12 @@ public:
 	//! Allows indirect access to the underlying OCIO configuration.
 	core::ConstConfigRcPtr	operator->() const { return get(); }
 
+	//!	Returns the names of all available color spaces.
+	const std::vector< std::string > & getAllColorSpaceNames() const { return mAllColorSpaceNames; }
+
 private:
-	core::ConstConfigRcPtr	mConfig;
+	core::ConstConfigRcPtr		mConfig;
+	std::vector< std::string >	mAllColorSpaceNames;
 };
 
 //! Abstract base class for all nodes.
@@ -180,6 +184,8 @@ public:
 				  const std::string & dst);
 
 	virtual void update( const Surface32fRef & image ) override;
+
+	const Config & getConfig() const { return mConfig; }
 private:
 	virtual void update() override {};
 
@@ -203,6 +209,8 @@ public:
 					 const std::string & dst);
 
 	virtual void update( const ci::gl::Texture2dRef & texture ) override;
+
+	const Config & getConfig() const { return mConfig; }
 private:
 	class BatchFormat
 	{

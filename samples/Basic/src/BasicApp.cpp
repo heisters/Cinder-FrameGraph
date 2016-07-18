@@ -2,6 +2,7 @@
 #include "cinder/app/RendererGl.h"
 #include "cinder/gl/gl.h"
 #include "cinder/ImageIo.h"
+#include "cinder/Log.h"
 
 #include "Cinder-OCIO.h"
 
@@ -62,6 +63,8 @@ void BasicApp::setup()
 	setWindowPos( (vec2)dsize * 0.5f - (vec2)getWindowSize() * 0.5f );
 
 	mSplitX = getWindowWidth() * 0.5f;
+
+
 }
 
 void BasicApp::mouseDrag( MouseEvent event )
