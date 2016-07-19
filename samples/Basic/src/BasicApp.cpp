@@ -3,6 +3,7 @@
 #include "cinder/gl/gl.h"
 #include "cinder/ImageIo.h"
 #include "cinder/Log.h"
+#include "cinder/params/Params.h"
 
 #include "Cinder-OCIO.h"
 
@@ -25,19 +26,30 @@ public:
 	void draw() override;
 
 private:
-	ocio::Config			mConfig;
-	ocio::QTMovieGlINodeRef	mMovieNode;
-	ocio::TextureONodeRef	mRawOutputNode;
-	ocio::TextureONodeRef	mProcessedOutputNode;
+	void						updateColorSpaces();
 
-	int						mSplitX;
+	ocio::Config				mConfig;
+	ocio::QTMovieGlINodeRef		mMovieNode;
+	ocio::ProcessGPUIONodeRef	mProcessNode;
+	ocio::TextureONodeRef		mRawOutputNode;
+	ocio::TextureONodeRef		mProcessedOutputNode;
+
+	int							mSplitX;
+
+	params::InterfaceGlRef		mParams;
+	int							mSrcColorSpaceIdx, mDstColorSpaceIdx;
+	vector< string>				mColorSpaceNames;
+	float						mFPS;
 };
 
 
 BasicApp::BasicApp() :
-mConfig( getAssetPath( CONFIG_ASSET_PATH ) )
+mConfig( getAssetPath( CONFIG_ASSET_PATH ) ),
+mSrcColorSpaceIdx( 0 ),
+mDstColorSpaceIdx( 0 )
 {
-
+	mColorSpaceNames = mConfig.getAllColorSpaceNames();
+	mColorSpaceNames.insert( mColorSpaceNames.begin(), "none" );
 }
 
 void BasicApp::setup()
@@ -45,14 +57,9 @@ void BasicApp::setup()
 	mMovieNode = ocio::QTMovieGlINode::create( getOpenFilePath() );
 	mMovieNode->loop();
 
-	auto process = ocio::ProcessGPUIONode::create(mConfig,
-												  "Input - Sony - S-Log2 - S-Gamut",
-												  "Output - Rec.709"
-												  );
 	mProcessedOutputNode = ocio::TextureONode::create();
 	mRawOutputNode = ocio::TextureONode::create();
 
-	mMovieNode >> process >> mProcessedOutputNode;
 	mMovieNode >> mRawOutputNode;
 
 	vec2 size = mMovieNode->getSize();
@@ -65,6 +72,13 @@ void BasicApp::setup()
 	mSplitX = getWindowWidth() * 0.5f;
 
 
+	mParams = params::InterfaceGl::create( getWindow(), "Parameters", toPixels( ivec2( 400, 200 ) ) );
+
+	mParams->addParam( "FPS", &mFPS, true ).precision( 1 );
+	mParams->addParam( "Source Color Space", mColorSpaceNames, &mSrcColorSpaceIdx )
+	.updateFn([&]{ updateColorSpaces(); });
+	mParams->addParam( "Destination Color Space", mColorSpaceNames, &mDstColorSpaceIdx )
+	.updateFn([&]{ updateColorSpaces(); });
 }
 
 void BasicApp::mouseDrag( MouseEvent event )
@@ -82,6 +96,7 @@ void BasicApp::mouseDown( MouseEvent event )
 void BasicApp::update()
 {
 	mMovieNode->update();
+	mFPS = getAverageFps();
 }
 
 void BasicApp::draw()
@@ -107,6 +122,24 @@ void BasicApp::draw()
 		gl::ScopedLineWidth scp_lineWidth( 5.f );
 		gl::ScopedColor scp_color( Color( 1.f, 1.f, 1.f ) );
 		gl::drawLine( vec2( mSplitX, 0 ), vec2( mSplitX, size.y ) );
+	}
+
+	mParams->draw();
+}
+
+void BasicApp::updateColorSpaces()
+{
+	string src = mColorSpaceNames[ mSrcColorSpaceIdx ];
+	string dst = mColorSpaceNames[ mDstColorSpaceIdx ];
+
+	if ( mProcessNode )
+		mMovieNode->disconnect( mProcessNode );
+
+	if ( src != "none" && dst != "none" ) {
+		mProcessNode = ocio::ProcessGPUIONode::create( mConfig, src, dst );
+		mMovieNode >> mProcessNode >> mProcessedOutputNode;
+	} else {
+		mProcessNode = nullptr;
 	}
 }
 

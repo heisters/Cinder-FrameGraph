@@ -63,6 +63,9 @@ public:
 	//! Add an \a output to this node.
 	virtual void connect( const ONodeRef & output );
 
+	//! Remove an \a output from this node.
+	virtual void disconnect( const ONodeRef & output );
+
 	//!
 	virtual void update();
 
@@ -86,6 +89,7 @@ public:
 	virtual void update() = 0;
 
 	virtual void connect( const ImageONodeRef & output );
+	virtual void disconnect( const ImageONodeRef & output );
 protected:
 	std::vector< ImageONodeRef > mOutputs;
 };
@@ -96,6 +100,7 @@ class ImageIONode : public ImageINode, public ImageONode
 {
 public:
 	using ImageINode::connect;
+	using ImageINode::disconnect;
 };
 
 //! A node that represents a Cinder Surface32f.
@@ -124,6 +129,7 @@ class TextureINode : public INode
 {
 public:
 	virtual void connect( const TextureONodeRef & output );
+	virtual void disconnect( const TextureONodeRef & output );
 
 	virtual void update() override;
 protected:
@@ -166,6 +172,7 @@ class TextureIONode : public TextureINode, public TextureONode
 {
 public:
 	using TextureINode::connect;
+	using TextureINode::disconnect;
 };
 
 //! A node that does basic processing.
@@ -253,9 +260,10 @@ public:
 
 	QTMovieGlINode( const ci::fs::path & path );
 
-	QTMovieGlINode & loop( bool enabled = true ) { mMovie->setLoop( enabled ); return *this; }
-
 	virtual void update() override;
+
+	
+	QTMovieGlINode & loop( bool enabled = true ) { mMovie->setLoop( enabled ); return *this; }
 
 	ci::vec2 getSize() const { return mMovie->getSize(); }
 
