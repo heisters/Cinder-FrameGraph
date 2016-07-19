@@ -37,9 +37,20 @@ public:
 	//!	Returns the names of all available color spaces.
 	const std::vector< std::string > & getAllColorSpaceNames() const { return mAllColorSpaceNames; }
 
+	//! Returns the names of all available displays.
+	const std::vector< std::string > & getAllDisplayNames() const { return mAllDisplayNames; }
+
+	//! Returns true if there are views for the \a display.
+	bool hasViewsForDisplay( const std::string & display ) { return mAllViewNames.find( display ) != mAllViewNames.end(); }
+
+	//! Returns the names of all views for the given \a display.
+	const std::vector< std::string > & getAllViewNames( const std::string & display ) const { return mAllViewNames.at( display );  }
+
 private:
 	core::ConstConfigRcPtr		mConfig;
 	std::vector< std::string >	mAllColorSpaceNames;
+	std::vector< std::string >	mAllDisplayNames;
+	std::map< std::string, std::vector< std::string > > mAllViewNames;
 };
 
 //! Abstract base class for all nodes.
@@ -204,20 +215,27 @@ private:
 class ProcessGPUIONode : public TextureIONode
 {
 public:
-	static ProcessGPUIONodeRef create(const Config & config,
-									  const std::string & src,
-									  const std::string & dst)
+	static ProcessGPUIONodeRef create( const Config & config )
 	{
-		return std::make_shared< ProcessGPUIONode >( config, src, dst );
+		return std::make_shared< ProcessGPUIONode >( config );
 	}
 
-	ProcessGPUIONode(const Config & config,
-					 const std::string & src,
-					 const std::string & dst);
+	ProcessGPUIONode(const Config & config );
 
 	virtual void update( const ci::gl::Texture2dRef & texture ) override;
 
 	const Config & getConfig() const { return mConfig; }
+
+	void setInputColorSpace( const std::string &inputName );
+	std::string getInputColorSpace() const { return mCSInput; }
+
+	void setDisplayColorSpace( const std::string &displayName );
+	std::string getDisplayColorSpace() const { return mCSDisplay; }
+
+	void setViewColorSpace( const std::string &viewName );
+	std::string getViewColorSpace() const { return mCSView; }
+
+	void setExposureFStop( float exposure );
 private:
 	class BatchFormat
 	{
@@ -236,12 +254,19 @@ private:
 	};
 
 	void						updateBatch( const BatchFormat & fmt );
+	void						updateProcessor();
 
 
 	Config						mConfig;
-	core::ConstProcessorRcPtr	mProcessor;
+	std::string					mCSInput;
+	std::string					mCSDisplay;
+	std::string					mCSView;
+	float						mExposureFStop = 0.f;
+	bool						mProcessorNeedsUpdate = false;
+
+	core::ConstProcessorRcPtr	mProcessor = nullptr;
 	core::GpuShaderDesc			mShaderDesc;
-	ci::gl::Texture3dRef		mLUTTex;
+	ci::gl::Texture3dRef		mLUTTex = nullptr;
 	ci::gl::FboRef				mFbo;
 	ci::gl::BatchRef			mBatch;
 	ci::mat4					mModelMatrix;
@@ -262,7 +287,7 @@ public:
 
 	virtual void update() override;
 
-	
+
 	QTMovieGlINode & loop( bool enabled = true ) { mMovie->setLoop( enabled ); return *this; }
 
 	ci::vec2 getSize() const { return mMovie->getSize(); }

@@ -26,7 +26,7 @@ public:
 	void draw() override;
 
 private:
-	void						updateColorSpaces();
+	void updateViewOptions();
 
 	ocio::Config				mConfig;
 	ocio::QTMovieGlINodeRef		mMovieNode;
@@ -37,19 +37,27 @@ private:
 	int							mSplitX;
 
 	params::InterfaceGlRef		mParams;
-	int							mSrcColorSpaceIdx, mDstColorSpaceIdx;
-	vector< string>				mColorSpaceNames;
+	int							mInputColorSpaceIdx = 0;
+	int							mDisplayIdx = 0;
+	int							mViewIdx = 0;
+	vector< string>				mInputColorSpaceNames;
+	vector< string >			mDisplayNames;
+	vector< string >			mViewNames;
 	float						mFPS;
+
+	float						mExposureFStop = 0.f;
 };
 
+const static string VIEW_MENU_NAME = "View";
 
 BasicApp::BasicApp() :
-mConfig( getAssetPath( CONFIG_ASSET_PATH ) ),
-mSrcColorSpaceIdx( 0 ),
-mDstColorSpaceIdx( 0 )
+mConfig( getAssetPath( CONFIG_ASSET_PATH ) )
 {
-	mColorSpaceNames = mConfig.getAllColorSpaceNames();
-	mColorSpaceNames.insert( mColorSpaceNames.begin(), "none" );
+	mInputColorSpaceNames = mConfig.getAllColorSpaceNames();
+	mInputColorSpaceNames.insert( mInputColorSpaceNames.begin(), "default" );
+
+	mDisplayNames = mConfig.getAllDisplayNames();
+	mDisplayNames.insert( mDisplayNames.begin(), "default" );
 }
 
 void BasicApp::setup()
@@ -57,9 +65,11 @@ void BasicApp::setup()
 	mMovieNode = ocio::QTMovieGlINode::create( getOpenFilePath() );
 	mMovieNode->loop();
 
+	mProcessNode = ocio::ProcessGPUIONode::create( mConfig );
 	mProcessedOutputNode = ocio::TextureONode::create();
 	mRawOutputNode = ocio::TextureONode::create();
 
+	mMovieNode >> mProcessNode >> mProcessedOutputNode;
 	mMovieNode >> mRawOutputNode;
 
 	vec2 size = mMovieNode->getSize();
@@ -74,11 +84,38 @@ void BasicApp::setup()
 
 	mParams = params::InterfaceGl::create( getWindow(), "Parameters", toPixels( ivec2( 400, 200 ) ) );
 
+
 	mParams->addParam( "FPS", &mFPS, true ).precision( 1 );
-	mParams->addParam( "Source Color Space", mColorSpaceNames, &mSrcColorSpaceIdx )
-	.updateFn([&]{ updateColorSpaces(); });
-	mParams->addParam( "Destination Color Space", mColorSpaceNames, &mDstColorSpaceIdx )
-	.updateFn([&]{ updateColorSpaces(); });
+
+	mParams->addParam( "Exposure", &mExposureFStop ).min( -3.f ).max( 3.f ).step( 0.25f )
+	.updateFn([&]{ mProcessNode->setExposureFStop( mExposureFStop ); });
+
+	mParams->addParam( "Input Color Space", mInputColorSpaceNames, &mInputColorSpaceIdx )
+	.group( "Color Spaces" )
+	.updateFn([&]{ mProcessNode->setInputColorSpace( mInputColorSpaceNames[ mInputColorSpaceIdx ] ); });
+
+	mParams->addParam( "Display", mDisplayNames, &mDisplayIdx )
+	.group( "Color Spaces" )
+	.updateFn([&]{ mProcessNode->setDisplayColorSpace( mDisplayNames[ mDisplayIdx ] ); updateViewOptions(); });
+
+	mParams->addParam( VIEW_MENU_NAME, {}, &mViewIdx )
+	.group( "Color Spaces" );
+	updateViewOptions();
+}
+
+void BasicApp::updateViewOptions()
+{
+	mParams->removeParam( VIEW_MENU_NAME );
+
+	if ( mConfig.hasViewsForDisplay( mProcessNode->getDisplayColorSpace() ) ) {
+		mViewNames = mConfig.getAllViewNames( mProcessNode->getDisplayColorSpace() );
+	} else {
+		mViewNames = {};
+	}
+
+	mParams->addParam( VIEW_MENU_NAME, mViewNames, &mViewIdx )
+	.group( "Color Spaces" )
+	.updateFn([&]{ mProcessNode->setViewColorSpace( mViewNames[ mViewIdx ] ); });
 }
 
 void BasicApp::mouseDrag( MouseEvent event )
@@ -125,22 +162,6 @@ void BasicApp::draw()
 	}
 
 	mParams->draw();
-}
-
-void BasicApp::updateColorSpaces()
-{
-	string src = mColorSpaceNames[ mSrcColorSpaceIdx ];
-	string dst = mColorSpaceNames[ mDstColorSpaceIdx ];
-
-	if ( mProcessNode )
-		mMovieNode->disconnect( mProcessNode );
-
-	if ( src != "none" && dst != "none" ) {
-		mProcessNode = ocio::ProcessGPUIONode::create( mConfig, src, dst );
-		mMovieNode >> mProcessNode >> mProcessedOutputNode;
-	} else {
-		mProcessNode = nullptr;
-	}
 }
 
 CINDER_APP( BasicApp, RendererGl( RendererGl::Options().msaa( 16 ) ) )
