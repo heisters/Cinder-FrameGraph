@@ -9,9 +9,6 @@
 namespace cinder { namespace ocio {
 namespace core = OCIO_NAMESPACE;
 
-typedef std::shared_ptr< class Node >				NodeRef;
-typedef std::shared_ptr< class ONode >				ONodeRef;
-typedef std::shared_ptr< class INode >				INodeRef;
 typedef std::shared_ptr< class ImageONode >			ImageONodeRef;
 typedef std::shared_ptr< class ImageINode >			ImageINodeRef;
 typedef std::shared_ptr< class ImageIONode >		ImageIONodeRef;
@@ -60,7 +57,7 @@ public:
 };
 
 //! An output node accepts input from a single node.
-class ONode : public Node, public std::enable_shared_from_this< ONode >
+class ONode : public Node
 {
 public:
 	virtual void update() {};
@@ -68,20 +65,31 @@ private:
 };
 
 //! An input node provides input to many outputs.
-class INode : public Node, public std::enable_shared_from_this< INode >
+template< class o_node_t >
+class INode : public Node
 {
 public:
 	//! Add an \a output to this node.
-	virtual void connect( const ONodeRef & output );
+	virtual void connect( const o_node_t & output )
+	{
+		mOutputs.push_back( output );
+	}
 
 	//! Remove an \a output from this node.
-	virtual void disconnect( const ONodeRef & output );
+	virtual void disconnect( const o_node_t & output )
+	{
+		mOutputs.erase( remove( mOutputs.begin(), mOutputs.end(), output ), mOutputs.end() );
+	}
 
-	//!
-	virtual void update();
+	//! Updates all connected outputs. Override in order to pass data to output
+	//! nodes.
+	virtual void update()
+	{
+		for ( auto & output : mOutputs ) output->update();
+	}
 
-private:
-	std::vector< ONodeRef > mOutputs;
+protected:
+	std::vector< o_node_t > mOutputs;
 };
 
 
@@ -89,20 +97,15 @@ private:
 class ImageONode : public ONode
 {
 public:
+	using ONode::update;
 	//! Descendants must do something with an image in their update.
 	virtual void update( const Surface32fRef & image ) = 0;
 };
 
 //! A node that provides an image as input to its outputs.
-class ImageINode : public INode
+class ImageINode : public INode< ImageONodeRef >
 {
 public:
-	virtual void update() = 0;
-
-	virtual void connect( const ImageONodeRef & output );
-	virtual void disconnect( const ImageONodeRef & output );
-protected:
-	std::vector< ImageONodeRef > mOutputs;
 };
 
 
@@ -110,8 +113,6 @@ protected:
 class ImageIONode : public ImageINode, public ImageONode
 {
 public:
-	using ImageINode::connect;
-	using ImageINode::disconnect;
 };
 
 //! A node that represents a Cinder Surface32f.
@@ -135,22 +136,6 @@ private:
 	ci::Surface32fRef		mSurface;
 };
 
-//! A node that emits OpenGL textures.
-class TextureINode : public INode
-{
-public:
-	virtual void connect( const TextureONodeRef & output );
-	virtual void disconnect( const TextureONodeRef & output );
-
-	virtual void update() override;
-protected:
-	virtual void update( const ci::gl::Texture2dRef & texture );
-
-private:
-	std::vector< TextureONodeRef >	mOutputs;
-	ci::gl::Texture2dRef			mOutTex;
-};
-
 
 //! A node that represents a Cinder gl::Texture2d, useful for displaying
 //! results.
@@ -164,6 +149,7 @@ public:
 
 	TextureONode();
 
+	using ImageONode::update;
 	virtual void update( const Surface32fRef & image ) override;
 	virtual void update( const ci::gl::Texture2dRef & texture );
 
@@ -174,16 +160,27 @@ public:
 
 	ci::vec2 getSize() const { return mTexture->getSize(); }
 private:
-	
+
 	ci::gl::Texture2dRef	mTexture = nullptr;
+};
+
+
+//! A node that emits OpenGL textures.
+class TextureINode : public INode< TextureONodeRef >
+{
+public:
+	virtual void update() override;
+protected:
+	virtual void update( const ci::gl::Texture2dRef & texture );
+
+private:
+	ci::gl::Texture2dRef			mOutTex;
 };
 
 
 class TextureIONode : public TextureINode, public TextureONode
 {
 public:
-	using TextureINode::connect;
-	using TextureINode::disconnect;
 };
 
 //! A node that does basic processing.

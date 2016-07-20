@@ -35,35 +35,6 @@ Config::Config( const ci::fs::path & path )
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// INode
-
-void INode::update()
-{
-	for ( auto & output : mOutputs ) output->update();
-}
-
-void INode::connect( const ONodeRef & output )
-{
-	mOutputs.push_back( output );
-}
-
-void INode::disconnect( const ONodeRef &output )
-{
-	mOutputs.erase( remove( mOutputs.begin(), mOutputs.end(), output ), mOutputs.end() );
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// ImageINode
-void ImageINode::connect( const ImageONodeRef & output )
-{
-	mOutputs.push_back( output );
-}
-
-void ImageINode::disconnect( const ImageONodeRef &output )
-{
-	mOutputs.erase( remove( mOutputs.begin(), mOutputs.end(), output ), mOutputs.end() );
-}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -82,14 +53,6 @@ void SurfaceINode::update()
 
 ////////////////////////////////////////////////////////////////////////////////
 // TextureINode
-void TextureINode::connect( const TextureONodeRef & output )
-{
-	mOutputs.push_back( output );
-}
-void TextureINode::disconnect( const TextureONodeRef &output )
-{
-	mOutputs.erase( remove( mOutputs.begin(), mOutputs.end(), output ), mOutputs.end() );
-}
 
 void TextureINode::update()
 {
