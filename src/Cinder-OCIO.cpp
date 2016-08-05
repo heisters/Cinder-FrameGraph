@@ -320,10 +320,10 @@ void ProcessGPUIONode::update( const gl::Texture2dRef & texture )
 ////////////////////////////////////////////////////////////////////////////////
 // QTMovieGlINode
 
-QTMovieGlINode::QTMovieGlINode( const fs::path & path ) :
+QTMovieGlINode::QTMovieGlINode( const fs::path & path, bool playImmediately ) :
 mMovie( qtime::MovieGl::create( path ) )
 {
-	mMovie->play();
+	if ( playImmediately ) mMovie->play();
 }
 
 void QTMovieGlINode::update()

@@ -6,17 +6,11 @@
 #include "OpenColorIO/OpenColorIO.h"
 #include "cinder/qtime/QuickTimeGl.h"
 
+#include "Cinder-OCIO/NodeContainer.h"
+#include "Cinder-OCIO/Types.h"
+
 namespace cinder { namespace ocio {
 namespace core = OCIO_NAMESPACE;
-
-typedef std::shared_ptr< class ImageONode >			ImageONodeRef;
-typedef std::shared_ptr< class ImageINode >			ImageINodeRef;
-typedef std::shared_ptr< class ImageIONode >		ImageIONodeRef;
-typedef std::shared_ptr< class ProcessIONode >		ProcessIONodeRef;
-typedef std::shared_ptr< class SurfaceINode >		SurfaceINodeRef;
-typedef std::shared_ptr< class TextureONode >		TextureONodeRef;
-typedef std::shared_ptr< class QTMovieGlINode >		QTMovieGlINodeRef;
-typedef std::shared_ptr< class ProcessGPUIONode >	ProcessGPUIONodeRef;
 
 //! A reference to an OCIO configuration file.
 class Config
@@ -50,6 +44,8 @@ private:
 	std::map< std::string, std::vector< std::string > > mAllViewNames;
 };
 
+
+
 //! Abstract base class for all nodes.
 class Node : private Noncopyable
 {
@@ -69,9 +65,12 @@ template< class o_node_t >
 class INode : public Node
 {
 public:
+	typedef NodeContainer< o_node_t > output_container_t;
+
 	//! Add an \a output to this node.
 	virtual void connect( const o_node_t & output )
 	{
+		assert( output != nullptr );
 		mOutputs.push_back( output );
 	}
 
@@ -81,6 +80,12 @@ public:
 		mOutputs.erase( remove( mOutputs.begin(), mOutputs.end(), output ), mOutputs.end() );
 	}
 
+	//! Remove all outputs from this node.
+	virtual void disconnect()
+	{
+		for ( const auto & out : mOutputs ) disconnect( out );
+	}
+
 	//! Updates all connected outputs. Override in order to pass data to output
 	//! nodes.
 	virtual void update()
@@ -88,8 +93,11 @@ public:
 		for ( auto & output : mOutputs ) output->update();
 	}
 
+	//! Returns true if this node is connected to any outputs.
+	bool isConnected() const { return ! mOutputs.empty(); }
+
 protected:
-	std::vector< o_node_t > mOutputs;
+	output_container_t mOutputs;
 };
 
 
@@ -158,7 +166,7 @@ public:
 	operator const ci::gl::Texture2dRef () const { return getTexture(); }
 	operator const bool () const { return mTexture != nullptr; }
 
-	ci::vec2 getSize() const { return mTexture->getSize(); }
+	ci::ivec2 getSize() const { return mTexture->getSize(); }
 private:
 
 	ci::gl::Texture2dRef	mTexture = nullptr;
@@ -275,17 +283,27 @@ private:
 class QTMovieGlINode : public TextureINode
 {
 public:
-	static QTMovieGlINodeRef create( const ci::fs::path & path )
+	static QTMovieGlINodeRef create( const ci::fs::path & path, bool playImmediately = true )
 	{
-		return std::make_shared< QTMovieGlINode >( path );
+		return std::make_shared< QTMovieGlINode >( path, playImmediately );
 	}
 
-	QTMovieGlINode( const ci::fs::path & path );
+	QTMovieGlINode( const ci::fs::path & path, bool playImmediately = true );
 
 	virtual void update() override;
 
 
+	QTMovieGlINode & play() { mMovie->play(); return *this; }
+	QTMovieGlINode & stop() { mMovie->stop(); return *this; }
 	QTMovieGlINode & loop( bool enabled = true ) { mMovie->setLoop( enabled ); return *this; }
+	QTMovieGlINode & seekToTime( float seconds ) { mMovie->seekToTime( seconds ); return *this; }
+	QTMovieGlINode & seekToFrame( int frame ) { mMovie->seekToFrame( frame ); return *this; }
+	QTMovieGlINode & seekToStart() { mMovie->seekToStart(); return *this; }
+	QTMovieGlINode & setRate( float rate ) { mMovie->setRate( rate ); return *this; }
+
+	float getDuration() const { return mMovie->getDuration(); }
+	float getCurrentTime() const { return mMovie->getCurrentTime(); }
+	bool isPlaying() const { return mMovie->isPlaying(); }
 
 	ci::vec2 getSize() const { return mMovie->getSize(); }
 
@@ -297,7 +315,7 @@ private:
 
 namespace operators {
 	template< typename in_t, typename out_t >
-	inline const out_t& operator>>( const in_t & input, const out_t & output )
+	inline const ref< out_t > & operator>>( const ref< in_t > & input, const ref< out_t > & output )
 	{
 		input->connect( output );
 		return output;
