@@ -101,6 +101,29 @@ protected:
 };
 
 
+//! A node that takes multiple inputs.
+template< class o_node_t, class o_node_ref_t = ref< o_node_t > >
+class MuxONode
+{
+public:
+	static MuxONodeRef< o_node_t > create( std::size_t size )
+	{
+		return std::make_shared< MuxONode< o_node_t > >( size );
+	}
+
+	MuxONode( std::size_t size )
+	{
+		mONodes.reserve( size );
+		for ( size_t i = 0; i < size; ++i ) mONodes.push_back( o_node_t::create() );
+	}
+
+	const NodeContainer< o_node_ref_t > & onodes() { return mONodes; }
+
+private:
+	NodeContainer< o_node_ref_t >	mONodes;
+};
+
+
 //! A node that accepts an image input.
 class ImageONode : public ONode
 {
@@ -311,7 +334,6 @@ private:
 
 	ci::qtime::MovieGlRef mMovie;
 };
-
 
 namespace operators {
 	template< typename in_t, typename out_t >

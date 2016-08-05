@@ -13,5 +13,7 @@ typedef ref< class SurfaceINode >		SurfaceINodeRef;
 typedef ref< class TextureONode >		TextureONodeRef;
 typedef ref< class QTMovieGlINode >		QTMovieGlINodeRef;
 typedef ref< class ProcessGPUIONode >	ProcessGPUIONodeRef;
+template< class o_node_t >
+using MuxONodeRef = ref< o_node_t >;
 
 } }
