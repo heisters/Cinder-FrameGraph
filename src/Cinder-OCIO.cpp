@@ -315,17 +315,3 @@ void ProcessGPUIONode::update( const gl::Texture2dRef & texture )
 	TextureINode::update( mFbo->getColorTexture() );
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// QTMovieGlINode
-
-QTMovieGlINode::QTMovieGlINode( const fs::path & path, bool playImmediately ) :
-mMovie( qtime::MovieGl::create( path ) )
-{
-	if ( playImmediately ) mMovie->play();
-}
-
-void QTMovieGlINode::update()
-{
-	auto tex = mMovie->getTexture();
-	if ( tex ) TextureINode::update( tex );
-}

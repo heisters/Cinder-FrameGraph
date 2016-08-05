@@ -4,7 +4,6 @@
 #include "cinder/gl/Texture.h"
 #include "cinder/gl/Fbo.h"
 #include "OpenColorIO/OpenColorIO.h"
-#include "cinder/qtime/QuickTimeGl.h"
 
 #include "Cinder-OCIO/NodeContainer.h"
 #include "Cinder-OCIO/Types.h"
@@ -302,38 +301,6 @@ private:
 };
 
 
-//! Provides a quicktime video texture input.
-class QTMovieGlINode : public TextureINode
-{
-public:
-	static QTMovieGlINodeRef create( const ci::fs::path & path, bool playImmediately = true )
-	{
-		return std::make_shared< QTMovieGlINode >( path, playImmediately );
-	}
-
-	QTMovieGlINode( const ci::fs::path & path, bool playImmediately = true );
-
-	virtual void update() override;
-
-
-	QTMovieGlINode & play() { mMovie->play(); return *this; }
-	QTMovieGlINode & stop() { mMovie->stop(); return *this; }
-	QTMovieGlINode & loop( bool enabled = true ) { mMovie->setLoop( enabled ); return *this; }
-	QTMovieGlINode & seekToTime( float seconds ) { mMovie->seekToTime( seconds ); return *this; }
-	QTMovieGlINode & seekToFrame( int frame ) { mMovie->seekToFrame( frame ); return *this; }
-	QTMovieGlINode & seekToStart() { mMovie->seekToStart(); return *this; }
-	QTMovieGlINode & setRate( float rate ) { mMovie->setRate( rate ); return *this; }
-
-	float getDuration() const { return mMovie->getDuration(); }
-	float getCurrentTime() const { return mMovie->getCurrentTime(); }
-	bool isPlaying() const { return mMovie->isPlaying(); }
-
-	ci::vec2 getSize() const { return mMovie->getSize(); }
-
-private:
-
-	ci::qtime::MovieGlRef mMovie;
-};
 
 namespace operators {
 	template< typename in_t, typename out_t >
