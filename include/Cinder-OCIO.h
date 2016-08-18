@@ -36,11 +36,17 @@ public:
 	//! Returns the names of all views for the given \a display.
 	const std::vector< std::string > & getAllViewNames( const std::string & display ) const { return mAllViewNames.at( display );  }
 
+	//! Returns the names of all looks for a display and view.
+	const std::string getLooks( const std::string & display, const std::string & view ) const { return mConfig->getDisplayLooks( display.c_str(), view.c_str() ); }
+
+	const std::vector< std::string > & getAllLookNames() const { return mAllLookNames; }
+
 private:
 	core::ConstConfigRcPtr		mConfig;
 	std::vector< std::string >	mAllColorSpaceNames;
 	std::vector< std::string >	mAllDisplayNames;
 	std::map< std::string, std::vector< std::string > > mAllViewNames;
+	std::vector< std::string >	mAllLookNames;
 };
 
 
@@ -262,6 +268,9 @@ public:
 	void setViewColorSpace( const std::string &viewName );
 	std::string getViewColorSpace() const { return mCSView; }
 
+	void setLook( const std::string &look );
+	std::string getLook() const { return mLook; }
+
 	void setExposureFStop( float exposure );
 private:
 	class BatchFormat
@@ -288,6 +297,7 @@ private:
 	std::string					mCSInput;
 	std::string					mCSDisplay;
 	std::string					mCSView;
+	std::string					mLook = "";
 	float						mExposureFStop = 0.f;
 	bool						mProcessorNeedsUpdate = false;
 

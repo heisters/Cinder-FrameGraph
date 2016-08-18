@@ -28,8 +28,17 @@ Config::Config( const ci::fs::path & path )
 
 			int nv = mConfig->getNumViews( display.c_str() );
 			for ( int j = 0; j < nv; ++j ) {
-				mAllViewNames[ display ].push_back( mConfig->getView( display.c_str(), j ) );
+				string view = mConfig->getView( display.c_str(), j );
+				mAllViewNames[ display ].push_back( view );
 			}
+		}
+	}
+
+	{
+		int n = mConfig->getNumLooks();
+		for ( int i = 0; i < n; ++i ) {
+			string look( mConfig->getLookNameByIndex( i ) );
+			mAllLookNames.push_back( look );
 		}
 	}
 
@@ -168,6 +177,11 @@ void ProcessGPUIONode::setViewColorSpace( const std::string &viewName )
 	mCSView = viewName;
 	mProcessorNeedsUpdate = true;
 }
+void ProcessGPUIONode::setLook( const std::string &look )
+{
+	mLook = look;
+	mProcessorNeedsUpdate = true;
+}
 void ProcessGPUIONode::setExposureFStop( float exposure )
 {
 	mExposureFStop = exposure;
@@ -196,8 +210,15 @@ void ProcessGPUIONode::updateProcessor()
 	// Setup the transform
 	core::DisplayTransformRcPtr transform = core::DisplayTransform::Create();
 	transform->setInputColorSpaceName( mCSInput.c_str() );
+	//transform->setColorTimingCC(<#const ConstTransformRcPtr &cc#>)
+	//transform->setChannelView(<#const ConstTransformRcPtr &transform#>);
 	transform->setDisplay( mCSDisplay.c_str() );
 	transform->setView( mCSView.c_str() );
+	//transform->setDisplayCC(<#const ConstTransformRcPtr &cc#>)
+	transform->setLooksOverride( mLook.c_str() );
+	if ( mLook != "" ) {
+		transform->setLooksOverrideEnabled( true );
+	}
 
 	// Apply exposure
 	if ( mExposureFStop != 0.f ) {

@@ -18,6 +18,7 @@
 		00B9955B1B128DF400A5C623 /* IOSurface.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B995591B128DF400A5C623 /* IOSurface.framework */; };
 		3C4CFC0F1D12033500EBFD5D /* Cinder-OCIO.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C4CFC0E1D12033500EBFD5D /* Cinder-OCIO.cpp */; };
 		3CA1AFC31D32D3F6002C21BD /* QuickTime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3CA1AFC21D32D3F6002C21BD /* QuickTime.framework */; };
+		3CA9B5C31D6630E80037F7E1 /* QuickTime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3CA9B5C21D6630E80037F7E1 /* QuickTime.cpp */; };
 		4D43BA0A3C14444597C394FF /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = 99997C7D678249E399DDBDAA /* CinderApp.icns */; };
 		5323E6B20EAFCA74003A9687 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B10EAFCA74003A9687 /* CoreVideo.framework */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
@@ -41,6 +42,11 @@
 		3C4CFC0D1D109A2100EBFD5D /* Cinder-OCIO.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Cinder-OCIO.h"; sourceTree = "<group>"; };
 		3C4CFC0E1D12033500EBFD5D /* Cinder-OCIO.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "Cinder-OCIO.cpp"; sourceTree = "<group>"; };
 		3CA1AFC21D32D3F6002C21BD /* QuickTime.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickTime.framework; path = System/Library/Frameworks/QuickTime.framework; sourceTree = SDKROOT; };
+		3CA9B5BD1D6630E00037F7E1 /* concurrent_queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = concurrent_queue.h; sourceTree = "<group>"; };
+		3CA9B5BE1D6630E00037F7E1 /* NodeContainer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NodeContainer.h; sourceTree = "<group>"; };
+		3CA9B5BF1D6630E00037F7E1 /* QuickTime.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = QuickTime.h; sourceTree = "<group>"; };
+		3CA9B5C01D6630E00037F7E1 /* Types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Types.h; sourceTree = "<group>"; };
+		3CA9B5C21D6630E80037F7E1 /* QuickTime.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = QuickTime.cpp; sourceTree = "<group>"; };
 		5323E6B10EAFCA74003A9687 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = /System/Library/Frameworks/CoreVideo.framework; sourceTree = "<absolute>"; };
 		8D1107320486CEB800E47090 /* Basic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Basic.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		99997C7D678249E399DDBDAA /* CinderApp.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = CinderApp.icns; path = ../resources/CinderApp.icns; sourceTree = "<group>"; };
@@ -176,6 +182,7 @@
 		3C4CFC0B1D1099D100EBFD5D /* src */ = {
 			isa = PBXGroup;
 			children = (
+				3CA9B5C11D6630E80037F7E1 /* Cinder-OCIO */,
 				3C4CFC0E1D12033500EBFD5D /* Cinder-OCIO.cpp */,
 			);
 			name = src;
@@ -185,10 +192,30 @@
 		3C4CFC0C1D1099D600EBFD5D /* include */ = {
 			isa = PBXGroup;
 			children = (
+				3CA9B5BC1D6630E00037F7E1 /* Cinder-OCIO */,
 				3C4CFC0D1D109A2100EBFD5D /* Cinder-OCIO.h */,
 			);
 			name = include;
 			path = ../../../include;
+			sourceTree = "<group>";
+		};
+		3CA9B5BC1D6630E00037F7E1 /* Cinder-OCIO */ = {
+			isa = PBXGroup;
+			children = (
+				3CA9B5BD1D6630E00037F7E1 /* concurrent_queue.h */,
+				3CA9B5BE1D6630E00037F7E1 /* NodeContainer.h */,
+				3CA9B5BF1D6630E00037F7E1 /* QuickTime.h */,
+				3CA9B5C01D6630E00037F7E1 /* Types.h */,
+			);
+			path = "Cinder-OCIO";
+			sourceTree = "<group>";
+		};
+		3CA9B5C11D6630E80037F7E1 /* Cinder-OCIO */ = {
+			isa = PBXGroup;
+			children = (
+				3CA9B5C21D6630E80037F7E1 /* QuickTime.cpp */,
+			);
+			path = "Cinder-OCIO";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -254,6 +281,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3CA9B5C31D6630E80037F7E1 /* QuickTime.cpp in Sources */,
 				3C4CFC0F1D12033500EBFD5D /* Cinder-OCIO.cpp in Sources */,
 				C5FE451D2248451697B9D7B0 /* BasicApp.cpp in Sources */,
 			);

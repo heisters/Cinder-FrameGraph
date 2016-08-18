@@ -6,6 +6,7 @@
 #include "cinder/params/Params.h"
 
 #include "Cinder-OCIO.h"
+#include "Cinder-OCIO/QuickTime.h"
 
 // This config is from https://github.com/imageworks/OpenColorIO-Configs
 const std::string CONFIG_ASSET_PATH = "aces_1.0.1/config.ocio";
@@ -40,24 +41,30 @@ private:
 	int							mInputColorSpaceIdx = 0;
 	int							mDisplayIdx = 0;
 	int							mViewIdx = 0;
+	int							mLookIdx = 0;
 	vector< string>				mInputColorSpaceNames;
 	vector< string >			mDisplayNames;
 	vector< string >			mViewNames;
+	vector< string >			mLookNames;
 	float						mFPS;
 
 	float						mExposureFStop = 0.f;
 };
 
 const static string VIEW_MENU_NAME = "View";
+const static string LOOK_MENU_NAME = "Looks";
 
 BasicApp::BasicApp() :
 mConfig( getAssetPath( CONFIG_ASSET_PATH ) )
 {
 	mInputColorSpaceNames = mConfig.getAllColorSpaceNames();
-	mInputColorSpaceNames.insert( mInputColorSpaceNames.begin(), "default" );
+	mInputColorSpaceNames.insert( mInputColorSpaceNames.begin(), "" );
 
 	mDisplayNames = mConfig.getAllDisplayNames();
-	mDisplayNames.insert( mDisplayNames.begin(), "default" );
+	mDisplayNames.insert( mDisplayNames.begin(), "" );
+
+	mLookNames = mConfig.getAllLookNames();
+	mLookNames.insert( mLookNames.begin(), "" );
 }
 
 void BasicApp::setup()
@@ -98,14 +105,21 @@ void BasicApp::setup()
 	.group( "Color Spaces" )
 	.updateFn([&]{ mProcessNode->setDisplayColorSpace( mDisplayNames[ mDisplayIdx ] ); updateViewOptions(); });
 
+
+	mParams->addParam( "Look", mLookNames, &mLookIdx )
+	.group( "Color Spaces" )
+	.updateFn([&]{ mProcessNode->setLook( mLookNames[ mLookIdx ] ); });
+
 	mParams->addParam( VIEW_MENU_NAME, {}, &mViewIdx )
 	.group( "Color Spaces" );
+
 	updateViewOptions();
 }
 
 void BasicApp::updateViewOptions()
 {
 	mParams->removeParam( VIEW_MENU_NAME );
+	mViewIdx = 0;
 
 	if ( mConfig.hasViewsForDisplay( mProcessNode->getDisplayColorSpace() ) ) {
 		mViewNames = mConfig.getAllViewNames( mProcessNode->getDisplayColorSpace() );
@@ -143,13 +157,13 @@ void BasicApp::draw()
 	vec2 scale = vec2( mSplitX, size.y ) / size;
 
 	if ( *mRawOutputNode ) {
-		Area src( vec2(), mRawOutputNode->getSize() * scale );
+		Area src( vec2(), (vec2)mRawOutputNode->getSize() * scale );
 		Rectf dst( vec2(), size * scale );
 		gl::draw( *mRawOutputNode, src, dst );
 	}
 	
 	if ( *mProcessedOutputNode ) {
-		Area src( mProcessedOutputNode->getSize() * scale * vec2( 1, 0 ), mProcessedOutputNode->getSize() );
+		Area src( (vec2)mProcessedOutputNode->getSize() * scale * vec2( 1, 0 ), mProcessedOutputNode->getSize() );
 		Rectf dst( size * scale * vec2( 1, 0 ), size );
 		gl::draw( *mProcessedOutputNode, src, dst );
 	}
