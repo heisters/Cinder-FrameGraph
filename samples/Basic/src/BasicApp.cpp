@@ -8,6 +8,9 @@
 #include "Cinder-OCIO.h"
 #include "Cinder-OCIO/QuickTime.h"
 
+
+#define M_TAU 6.28318530717958647692528676655900576839433879875021
+
 // This config is from https://github.com/imageworks/OpenColorIO-Configs
 const std::string CONFIG_ASSET_PATH = "aces_1.0.1/config.ocio";
 
@@ -16,11 +19,77 @@ using namespace ci::app;
 using namespace std;
 using namespace ocio::operators;
 
+
+typedef ocio::ref< class CubeONode > CubeONodeRef;
+
+class CubeONode : public ocio::TextureINode {
+public:
+	static CubeONodeRef create()
+	{
+		return std::make_shared< CubeONode >();
+	}
+
+	CubeONode();
+	virtual void update() override;
+
+	void resize( const ivec2 & size );
+
+private:
+	gl::BatchRef	mBatch;
+	CameraPersp		mCam;
+	gl::FboRef		mFbo;
+};
+
+
+CubeONode::CubeONode()
+{
+	auto cube = geom::Cube().colors(
+									ColorAf( 1.f, 0.f, 0.f ),
+									ColorAf( 1.f, 1.f, 0.f ),
+									ColorAf( 0.f, 1.f, 0.f ),
+									ColorAf( 0.f, 1.f, 1.f ),
+									ColorAf( 0.f, 0.f, 1.f ),
+									ColorAf( 1.f, 0.f, 1.f )
+									);
+	mBatch = gl::Batch::create( cube, gl::getStockShader( gl::ShaderDef().color() ) );
+}
+
+void CubeONode::resize( const ivec2 &size )
+{
+	mFbo = gl::Fbo::create( size.x , size.y );
+	mFbo->getColorTexture()->setTopDown();
+	mCam = CameraPersp( size.x, size.y, 60.f, 0.1f, 10.f );
+	mCam = mCam.calcFraming( Sphere( vec3(), 1.f ) );
+}
+
+void CubeONode::update()
+{
+	if ( ! mFbo ) return;
+
+	{
+		gl::ScopedFramebuffer	scp_fbo( mFbo );
+		gl::ScopedViewport		scp_viewport( mFbo->getSize() );
+		gl::ScopedMatrices		scp_mtx;
+		gl::ScopedDepth			scp_depth( true );
+		gl::ScopedBlendAlpha	scp_alpha;
+
+		gl::setMatrices( mCam );
+		gl::multModelMatrix( rotate( (float)( M_TAU * 0.1 * app::getElapsedSeconds() ), vec3( 1.f, 0.f, 1.f ) ) );
+
+		gl::clear();
+
+		mBatch->draw();
+	}
+
+	TextureINode::update( mFbo->getColorTexture() );
+}
+
 class BasicApp : public App {
 public:
 	BasicApp();
 
 	void setup() override;
+	void resize() override;
 	void mouseDrag( MouseEvent event ) override;
 	void mouseDown( MouseEvent event ) override;
 	void update() override;
@@ -34,6 +103,7 @@ private:
 	ocio::ProcessGPUIONodeRef	mProcessNode;
 	ocio::TextureONodeRef		mRawOutputNode;
 	ocio::TextureONodeRef		mProcessedOutputNode;
+	CubeONodeRef				mCubeNode;
 
 	int							mSplitX;
 
@@ -49,10 +119,12 @@ private:
 	float						mFPS;
 
 	float						mExposureFStop = 0.f;
+
+	vector< string >			mScenes{ "video", "cube" };
+	int							mSceneIdx = 0;
 };
 
 const static string VIEW_MENU_NAME = "View";
-const static string LOOK_MENU_NAME = "Looks";
 
 BasicApp::BasicApp() :
 mConfig( getAssetPath( CONFIG_ASSET_PATH ) )
@@ -69,15 +141,32 @@ mConfig( getAssetPath( CONFIG_ASSET_PATH ) )
 
 void BasicApp::setup()
 {
+	/***************************************************************************
+	 * Create node graph
+	 */
+
+
 	mMovieNode = ocio::QTMovieGlINode::create( getOpenFilePath() );
 	mMovieNode->loop();
+
+	mCubeNode = CubeONode::create();
 
 	mProcessNode = ocio::ProcessGPUIONode::create( mConfig );
 	mProcessedOutputNode = ocio::TextureONode::create();
 	mRawOutputNode = ocio::TextureONode::create();
 
-	mMovieNode >> mProcessNode >> mProcessedOutputNode;
+	mMovieNode >> mProcessNode;
 	mMovieNode >> mRawOutputNode;
+
+	mCubeNode >> mProcessNode;
+	mCubeNode >> mRawOutputNode;
+
+	mProcessNode >> mProcessedOutputNode;
+
+
+	/***************************************************************************
+	 * Setup split interface
+	 */
 
 	vec2 size = mMovieNode->getSize();
 	ivec2 dsize = getDisplay()->getSize();
@@ -89,6 +178,10 @@ void BasicApp::setup()
 	mSplitX = getWindowWidth() * 0.5f;
 
 
+	/***************************************************************************
+	 * Create param panel
+	 */
+
 	mParams = params::InterfaceGl::create( getWindow(), "Parameters", toPixels( ivec2( 400, 200 ) ) );
 
 
@@ -96,6 +189,8 @@ void BasicApp::setup()
 
 	mParams->addParam( "Exposure", &mExposureFStop ).min( -3.f ).max( 3.f ).step( 0.25f )
 	.updateFn([&]{ mProcessNode->setExposureFStop( mExposureFStop ); });
+
+	mParams->addParam( "Scene", mScenes, &mSceneIdx );
 
 	mParams->addParam( "Input Color Space", mInputColorSpaceNames, &mInputColorSpaceIdx )
 	.group( "Color Spaces" )
@@ -114,6 +209,14 @@ void BasicApp::setup()
 	.group( "Color Spaces" );
 
 	updateViewOptions();
+
+
+	resize();
+}
+
+void BasicApp::resize()
+{
+	mCubeNode->resize( getWindowSize() );
 }
 
 void BasicApp::updateViewOptions()
@@ -146,8 +249,13 @@ void BasicApp::mouseDown( MouseEvent event )
 
 void BasicApp::update()
 {
-	mMovieNode->update();
 	mFPS = getAverageFps();
+
+	if ( mScenes[ mSceneIdx ] == "video" ) {
+		mMovieNode->update();
+	} else {
+		mCubeNode->update();
+	}
 }
 
 void BasicApp::draw()
