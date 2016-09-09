@@ -3,53 +3,15 @@
 #include "cinder/Surface.h"
 #include "cinder/gl/Texture.h"
 #include "cinder/gl/Fbo.h"
-#include "OpenColorIO/OpenColorIO.h"
+#include "cinder/gl/GlslProg.h"
+#include "cinder/gl/Batch.h"
 
 #include "Cinder-OCIO/NodeContainer.h"
 #include "Cinder-OCIO/Types.h"
+#include "mapbox/variant.hpp"
+#include "mapbox/variant_io.hpp"
 
 namespace cinder { namespace ocio {
-namespace core = OCIO_NAMESPACE;
-
-//! A reference to an OCIO configuration file.
-class Config
-{
-public:
-	//! Construct a new configuration reference from a file on disk.
-	Config( const ci::fs::path & path );
-
-	//! Returns the underlying OCIO configuration pointer.
-	core::ConstConfigRcPtr	get() const { return mConfig; }
-
-	//! Allows indirect access to the underlying OCIO configuration.
-	core::ConstConfigRcPtr	operator->() const { return get(); }
-
-	//!	Returns the names of all available color spaces.
-	const std::vector< std::string > & getAllColorSpaceNames() const { return mAllColorSpaceNames; }
-
-	//! Returns the names of all available displays.
-	const std::vector< std::string > & getAllDisplayNames() const { return mAllDisplayNames; }
-
-	//! Returns true if there are views for the \a display.
-	bool hasViewsForDisplay( const std::string & display ) { return mAllViewNames.find( display ) != mAllViewNames.end(); }
-
-	//! Returns the names of all views for the given \a display.
-	const std::vector< std::string > & getAllViewNames( const std::string & display ) const { return mAllViewNames.at( display );  }
-
-	//! Returns the names of all looks for a display and view.
-	const std::string getLooks( const std::string & display, const std::string & view ) const { return mConfig->getDisplayLooks( display.c_str(), view.c_str() ); }
-
-	const std::vector< std::string > & getAllLookNames() const { return mAllLookNames; }
-
-private:
-	core::ConstConfigRcPtr		mConfig;
-	std::vector< std::string >	mAllColorSpaceNames;
-	std::vector< std::string >	mAllDisplayNames;
-	std::map< std::string, std::vector< std::string > > mAllViewNames;
-	std::vector< std::string >	mAllLookNames;
-};
-
-
 
 //! Abstract base class for all nodes.
 class Node : private Noncopyable
@@ -88,7 +50,7 @@ public:
 	//! Remove all outputs from this node.
 	virtual void disconnect()
 	{
-		for ( const auto & out : mOutputs ) disconnect( out );
+		mOutputs.clear();
 	}
 
 	//! Updates all connected outputs. Override in order to pass data to output
@@ -104,7 +66,6 @@ public:
 protected:
 	output_container_t mOutputs;
 };
-
 
 //! A node that takes multiple inputs.
 template< class o_node_t, class o_node_ref_t = ref< o_node_t > >
@@ -137,6 +98,7 @@ public:
 	//! Descendants must do something with an image in their update.
 	virtual void update( const Surface32fRef & image ) = 0;
 };
+typedef ref< ImageONode > ImageONodeRef;
 
 //! A node that provides an image as input to its outputs.
 class ImageINode : public INode< ImageONodeRef >
@@ -155,7 +117,7 @@ public:
 class SurfaceINode : public ImageINode
 {
 public:
-	static SurfaceINodeRef create( const Surface32fRef & surface )
+	static ref< SurfaceINode > create( const Surface32fRef & surface )
 	{
 		return std::make_shared< SurfaceINode >( surface );
 	}
@@ -178,7 +140,7 @@ private:
 class TextureONode : public ImageONode
 {
 public:
-	static TextureONodeRef create()
+	static ref< TextureONode > create()
 	{
 		return std::make_shared< TextureONode >();
 	}
@@ -199,6 +161,7 @@ private:
 
 	ci::gl::Texture2dRef	mTexture = nullptr;
 };
+typedef ref< TextureONode > TextureONodeRef;
 
 
 //! A node that emits OpenGL textures.
@@ -219,98 +182,45 @@ class TextureIONode : public TextureINode, public TextureONode
 public:
 };
 
-//! A node that does basic processing.
-class ProcessIONode : public ImageIONode
+
+//! A node that applies a shader to a texture input.
+class TextureShaderIONode : public TextureINode, public TextureONode
 {
 public:
-	static ProcessIONodeRef create(const Config & config,
-								   const std::string & src,
-								   const std::string & dst)
+	static ref< TextureShaderIONode > create( const ci::gl::GlslProgRef & shader )
 	{
-		return std::make_shared< ProcessIONode >( config, src, dst );
+		return std::make_shared< TextureShaderIONode >( shader );
 	}
-
-	ProcessIONode(const Config & config,
-				  const std::string & src,
-				  const std::string & dst);
-
-	virtual void update( const Surface32fRef & image ) override;
-
-	const Config & getConfig() const { return mConfig; }
-private:
-	virtual void update() override {};
-
-	Config						mConfig;
-	core::ConstProcessorRcPtr	mProcessor;
-};
-
-//! A node that does processing on the GPU.
-class ProcessGPUIONode : public TextureIONode
-{
-public:
-	static ProcessGPUIONodeRef create( const Config & config )
-	{
-		return std::make_shared< ProcessGPUIONode >( config );
-	}
-
-	ProcessGPUIONode(const Config & config );
-
+	TextureShaderIONode( const ci::gl::GlslProgRef & shader );
 	virtual void update( const ci::gl::Texture2dRef & texture ) override;
 
-	const Config & getConfig() const { return mConfig; }
-
-	void setInputColorSpace( const std::string &inputName );
-	std::string getInputColorSpace() const { return mCSInput; }
-
-	void setDisplayColorSpace( const std::string &displayName );
-	std::string getDisplayColorSpace() const { return mCSDisplay; }
-
-	void setViewColorSpace( const std::string &viewName );
-	std::string getViewColorSpace() const { return mCSView; }
-
-	void setLook( const std::string &look );
-	std::string getLook() const { return mLook; }
-
-	void setExposureFStop( float exposure );
 private:
-	class BatchFormat
-	{
-	public:
-		BatchFormat & textureTarget( GLenum target ) { mTextureTarget = target; return *this; }
-		GLenum getTextureTarget() const { return mTextureTarget; }
-
-		BatchFormat & textureSize( const ci::vec2 & size ) { mTextureSize = size; return *this; }
-		ci::vec2 getTextureSize() const { return mTextureSize; }
-
-		bool operator == ( const BatchFormat & rhs ) const { return mTextureTarget == rhs.mTextureTarget && mTextureSize == rhs.mTextureSize; }
-
-	private:
-		GLenum		mTextureTarget;
-		ci::vec2	mTextureSize;
-	};
-
-	void						updateBatch( const BatchFormat & fmt );
-	void						updateProcessor();
-
-
-	Config						mConfig;
-	std::string					mCSInput;
-	std::string					mCSDisplay;
-	std::string					mCSView;
-	std::string					mLook = "";
-	float						mExposureFStop = 0.f;
-	bool						mProcessorNeedsUpdate = false;
-
-	core::ConstProcessorRcPtr	mProcessor = nullptr;
-	core::GpuShaderDesc			mShaderDesc;
-	ci::gl::Texture3dRef		mLUTTex = nullptr;
-	ci::gl::FboRef				mFbo;
-	ci::gl::BatchRef			mBatch;
-	ci::mat4					mModelMatrix;
-	BatchFormat					mBatchFormat;
+	ci::gl::BatchRef mBatch;
+	ci::gl::FboRef mFbo;
+	ci::mat4 mModelMatrix;
 };
 
 
+// FIXME: oops! Compound is a better name than Composite to avoid confusion with
+// image compositing
+template < typename ... Types >
+class CompositeNode
+{
+public:
+	typedef mapbox::util::variant< Types... > variant;
+
+	static CompositeNodeRef< Types... > create( const Types& ... nodes )
+	{
+		return std::make_shared< CompositeNode< Types... > >( nodes... );
+	}
+
+	CompositeNode( const Types& ... nodes ) :
+		mNodes{ nodes... }
+	{}
+
+protected:
+	std::vector< variant > mNodes;
+};
 
 namespace operators {
 	template< typename in_t, typename out_t >
