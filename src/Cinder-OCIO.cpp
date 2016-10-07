@@ -74,15 +74,18 @@ void TextureShaderIONode::update( const ci::gl::Texture2dRef & texture )
 		gl::ScopedFramebuffer	scp_fbo( mFbo );
 		gl::ScopedViewport		scp_viewport( mFbo->getSize() );
 		gl::ScopedMatrices		scp_mtx;
-		gl::ScopedTextureBind	scp_tex( texture );
+		gl::ScopedTextureBind	scp_tex( texture, 0 );
 
 		gl::setMatricesWindow( mFbo->getSize() );
 		gl::multModelMatrix( mModelMatrix );
+
+		mBatch->getGlslProg()->uniform( "uSize", vec2( mFbo->getSize() ) );
 
 		gl::clear();
 
 		mBatch->draw();
 	}
+
 
 	auto tex = mFbo->getColorTexture();
 	tex->setTopDown( true );

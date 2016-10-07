@@ -37,6 +37,7 @@ public:
 
 	float getDuration() const { return mMovie->getDuration(); }
 	float getCurrentTime() const { return mMovie->getCurrentTime(); }
+	float getRemainingTime() const { return mMovie->getDuration() - mMovie->getCurrentTime(); }
 	bool isPlaying() const { return mMovie->isPlaying(); }
 
 	ci::vec2 getSize() const { return mMovie->getSize(); }

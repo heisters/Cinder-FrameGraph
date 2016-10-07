@@ -151,6 +151,7 @@ public:
 	virtual void update( const Surface32fRef & image ) override;
 	virtual void update( const ci::gl::Texture2dRef & texture );
 
+	void clear() { mTexture = nullptr; }
 	const ci::gl::Texture2dRef getTexture() const { return mTexture; }
 
 	operator const ci::gl::Texture2dRef () const { return getTexture(); }
