@@ -25,10 +25,10 @@ namespace ocio {
 }
 
 template< typename ... Types >
-class CompositeNode;
+class CompoundNode;
 
 template< typename ... Types >
-using CompositeNodeRef = ref< CompositeNode< Types... > >;
+using CompoundNodeRef = ref< CompoundNode< Types... > >;
 
 template< class o_node_t >
 using MuxONodeRef = ref< o_node_t >;

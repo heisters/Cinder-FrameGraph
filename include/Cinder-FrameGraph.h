@@ -203,20 +203,19 @@ private:
 };
 
 
-// FIXME: oops! Compound is a better name than Composite to avoid confusion with
-// image compositing
+//! A node that is comprised of other nodes
 template < typename ... Types >
-class CompositeNode
+class CompoundNode
 {
 public:
 	typedef mapbox::util::variant< Types... > variant;
 
-	static CompositeNodeRef< Types... > create( const Types& ... nodes )
+	static CompoundNodeRef< Types... > create( const Types& ... nodes )
 	{
-		return std::make_shared< CompositeNode< Types... > >( nodes... );
+		return std::make_shared< CompoundNode< Types... > >( nodes... );
 	}
 
-	CompositeNode( const Types& ... nodes ) :
+	CompoundNode( const Types& ... nodes ) :
 		mNodes{ nodes... }
 	{}
 
