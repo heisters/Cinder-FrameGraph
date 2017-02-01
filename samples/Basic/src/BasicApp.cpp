@@ -5,9 +5,9 @@
 #include "cinder/Log.h"
 #include "cinder/params/Params.h"
 
-#include "Cinder-OCIO.h"
-#include "Cinder-OCIO/QuickTime.h"
-
+#include "Cinder-FrameGraph.h"
+#include "Cinder-FrameGraph/QuickTime.h"
+#include "Cinder-FrameGraph/OCIO.h"
 
 #define M_TAU 6.28318530717958647692528676655900576839433879875021
 
@@ -17,12 +17,12 @@ const std::string CONFIG_ASSET_PATH = "aces_1.0.1/config.ocio";
 using namespace ci;
 using namespace ci::app;
 using namespace std;
-using namespace ocio::operators;
+using namespace frame_graph::operators;
 
 
-typedef ocio::ref< class CubeONode > CubeONodeRef;
+typedef frame_graph::ref< class CubeONode > CubeONodeRef;
 
-class CubeONode : public ocio::TextureINode {
+class CubeONode : public frame_graph::TextureINode {
 public:
 	static CubeONodeRef create()
 	{
@@ -98,12 +98,12 @@ public:
 private:
 	void updateViewOptions();
 
-	ocio::Config				mConfig;
-	ocio::QTMovieGlINodeRef		mMovieNode;
-	ocio::ProcessGPUIONodeRef	mProcessNode;
-	ocio::TextureONodeRef		mRawOutputNode;
-	ocio::TextureONodeRef		mProcessedOutputNode;
-	CubeONodeRef				mCubeNode;
+	frame_graph::ocio::Config				mConfig;
+	frame_graph::QTMovieGlINodeRef			mMovieNode;
+	frame_graph::ocio::ProcessGPUIONodeRef	mProcessNode;
+	frame_graph::TextureONodeRef			mRawOutputNode;
+	frame_graph::TextureONodeRef			mProcessedOutputNode;
+	CubeONodeRef							mCubeNode;
 
 	int							mSplitX;
 
@@ -146,14 +146,14 @@ void BasicApp::setup()
 	 */
 
 
-	mMovieNode = ocio::QTMovieGlINode::create( getOpenFilePath() );
+	mMovieNode = frame_graph::QTMovieGlINode::create( getOpenFilePath() );
 	mMovieNode->loop();
 
 	mCubeNode = CubeONode::create();
 
-	mProcessNode = ocio::ProcessGPUIONode::create( mConfig );
-	mProcessedOutputNode = ocio::TextureONode::create();
-	mRawOutputNode = ocio::TextureONode::create();
+	mProcessNode = frame_graph::ocio::ProcessGPUIONode::create( mConfig );
+	mProcessedOutputNode = frame_graph::TextureONode::create();
+	mRawOutputNode = frame_graph::TextureONode::create();
 
 	mMovieNode >> mProcessNode;
 	mMovieNode >> mRawOutputNode;

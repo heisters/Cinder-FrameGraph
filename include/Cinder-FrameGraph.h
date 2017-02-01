@@ -6,12 +6,12 @@
 #include "cinder/gl/GlslProg.h"
 #include "cinder/gl/Batch.h"
 
-#include "Cinder-OCIO/NodeContainer.h"
-#include "Cinder-OCIO/Types.h"
+#include "Cinder-FrameGraph/NodeContainer.h"
+#include "Cinder-FrameGraph/Types.h"
 #include "mapbox/variant.hpp"
 #include "mapbox/variant_io.hpp"
 
-namespace cinder { namespace ocio {
+namespace cinder { namespace frame_graph {
 
 //! Abstract base class for all nodes.
 class Node : private Noncopyable

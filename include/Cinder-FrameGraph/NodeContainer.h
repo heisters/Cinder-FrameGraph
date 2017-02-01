@@ -1,6 +1,6 @@
 #pragma once
 
-namespace cinder { namespace ocio {
+namespace cinder { namespace frame_graph {
 
 template< class node_t >
 using ref = std::shared_ptr< node_t >;

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "Cinder-OCIO.h"
-#include "Cinder-OCIO/concurrent_queue.h"
+#include "Cinder-FrameGraph.h"
+#include "Cinder-FrameGraph/concurrent_queue.h"
 #include "cinder/qtime/QuickTimeGl.h"
 #include "cinder/qtime/AvfWriter.h"
 #include <thread>
 #include <atomic>
 
-namespace cinder { namespace ocio {
+namespace cinder { namespace frame_graph {
 
 typedef ref< class QTMovieGlINode >				QTMovieGlINodeRef;
 typedef ref< class QTMovieWriterONode >			QTMovieWriterONodeRef;

@@ -1,3 +1,11 @@
+#include "Cinder-FrameGraph/OCIO.h"
+#include "cinder/Log.h"
+
+using namespace ci;
+using namespace frame_graph;
+using namespace ocio;
+using namespace std;
+
 ////////////////////////////////////////////////////////////////////////////////
 // Config
 

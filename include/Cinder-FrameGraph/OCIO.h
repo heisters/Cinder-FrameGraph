@@ -3,10 +3,12 @@
 #include "cinder/gl/Texture.h"
 #include "cinder/gl/Fbo.h"
 
-#include "Cinder-OCIO/NodeContainer.h"
-#include "Cinder-OCIO/Types.h"
+#include "Cinder-FrameGraph.h"
+#include "Cinder-FrameGraph/NodeContainer.h"
+#include "Cinder-FrameGraph/Types.h"
 
 namespace cinder {
+namespace frame_graph {
 namespace ocio {
 namespace core = OCIO_NAMESPACE;
 
@@ -141,5 +143,6 @@ private:
 	BatchFormat					mBatchFormat;
 };
 
+}
 }
 }

@@ -6,7 +6,7 @@
 #include <mutex>
 #include <condition_variable>
 
-namespace cinder { namespace ocio {
+namespace cinder { namespace frame_graph {
 
 template<typename Data>
 class concurrent_queue

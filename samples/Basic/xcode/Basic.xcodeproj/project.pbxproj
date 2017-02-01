@@ -16,7 +16,8 @@
 		00B784B60FF439BC000DE1D7 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B784B20FF439BC000DE1D7 /* CoreAudio.framework */; };
 		00B9955A1B128DF400A5C623 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B995581B128DF400A5C623 /* IOKit.framework */; };
 		00B9955B1B128DF400A5C623 /* IOSurface.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B995591B128DF400A5C623 /* IOSurface.framework */; };
-		3C4CFC0F1D12033500EBFD5D /* Cinder-OCIO.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C4CFC0E1D12033500EBFD5D /* Cinder-OCIO.cpp */; };
+		3C1C12F21E42A05F00A615D3 /* OCIO.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C1C12F11E42A05F00A615D3 /* OCIO.cpp */; };
+		3C4CFC0F1D12033500EBFD5D /* Cinder-FrameGraph.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3C4CFC0E1D12033500EBFD5D /* Cinder-FrameGraph.cpp */; };
 		3CA1AFC31D32D3F6002C21BD /* QuickTime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3CA1AFC21D32D3F6002C21BD /* QuickTime.framework */; };
 		3CA9B5C31D6630E80037F7E1 /* QuickTime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3CA9B5C21D6630E80037F7E1 /* QuickTime.cpp */; };
 		4D43BA0A3C14444597C394FF /* CinderApp.icns in Resources */ = {isa = PBXBuildFile; fileRef = 99997C7D678249E399DDBDAA /* CinderApp.icns */; };
@@ -39,8 +40,10 @@
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		2E8078A841DF4317A340A7E4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		3C4CFC0D1D109A2100EBFD5D /* Cinder-OCIO.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Cinder-OCIO.h"; sourceTree = "<group>"; };
-		3C4CFC0E1D12033500EBFD5D /* Cinder-OCIO.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "Cinder-OCIO.cpp"; sourceTree = "<group>"; };
+		3C1C12F01E42A01600A615D3 /* OCIO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OCIO.h; sourceTree = "<group>"; };
+		3C1C12F11E42A05F00A615D3 /* OCIO.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = OCIO.cpp; sourceTree = "<group>"; };
+		3C4CFC0D1D109A2100EBFD5D /* Cinder-FrameGraph.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Cinder-FrameGraph.h"; sourceTree = "<group>"; };
+		3C4CFC0E1D12033500EBFD5D /* Cinder-FrameGraph.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "Cinder-FrameGraph.cpp"; sourceTree = "<group>"; };
 		3CA1AFC21D32D3F6002C21BD /* QuickTime.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickTime.framework; path = System/Library/Frameworks/QuickTime.framework; sourceTree = SDKROOT; };
 		3CA9B5BD1D6630E00037F7E1 /* concurrent_queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = concurrent_queue.h; sourceTree = "<group>"; };
 		3CA9B5BE1D6630E00037F7E1 /* NodeContainer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NodeContainer.h; sourceTree = "<group>"; };
@@ -182,8 +185,8 @@
 		3C4CFC0B1D1099D100EBFD5D /* src */ = {
 			isa = PBXGroup;
 			children = (
-				3CA9B5C11D6630E80037F7E1 /* Cinder-OCIO */,
-				3C4CFC0E1D12033500EBFD5D /* Cinder-OCIO.cpp */,
+				3CA9B5C11D6630E80037F7E1 /* Cinder-FrameGraph */,
+				3C4CFC0E1D12033500EBFD5D /* Cinder-FrameGraph.cpp */,
 			);
 			name = src;
 			path = ../../../src;
@@ -192,30 +195,32 @@
 		3C4CFC0C1D1099D600EBFD5D /* include */ = {
 			isa = PBXGroup;
 			children = (
-				3CA9B5BC1D6630E00037F7E1 /* Cinder-OCIO */,
-				3C4CFC0D1D109A2100EBFD5D /* Cinder-OCIO.h */,
+				3CA9B5BC1D6630E00037F7E1 /* Cinder-FrameGraph */,
+				3C4CFC0D1D109A2100EBFD5D /* Cinder-FrameGraph.h */,
 			);
 			name = include;
 			path = ../../../include;
 			sourceTree = "<group>";
 		};
-		3CA9B5BC1D6630E00037F7E1 /* Cinder-OCIO */ = {
+		3CA9B5BC1D6630E00037F7E1 /* Cinder-FrameGraph */ = {
 			isa = PBXGroup;
 			children = (
+				3C1C12F01E42A01600A615D3 /* OCIO.h */,
 				3CA9B5BD1D6630E00037F7E1 /* concurrent_queue.h */,
 				3CA9B5BE1D6630E00037F7E1 /* NodeContainer.h */,
 				3CA9B5BF1D6630E00037F7E1 /* QuickTime.h */,
 				3CA9B5C01D6630E00037F7E1 /* Types.h */,
 			);
-			path = "Cinder-OCIO";
+			path = "Cinder-FrameGraph";
 			sourceTree = "<group>";
 		};
-		3CA9B5C11D6630E80037F7E1 /* Cinder-OCIO */ = {
+		3CA9B5C11D6630E80037F7E1 /* Cinder-FrameGraph */ = {
 			isa = PBXGroup;
 			children = (
+				3C1C12F11E42A05F00A615D3 /* OCIO.cpp */,
 				3CA9B5C21D6630E80037F7E1 /* QuickTime.cpp */,
 			);
-			path = "Cinder-OCIO";
+			path = "Cinder-FrameGraph";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -282,8 +287,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				3CA9B5C31D6630E80037F7E1 /* QuickTime.cpp in Sources */,
-				3C4CFC0F1D12033500EBFD5D /* Cinder-OCIO.cpp in Sources */,
+				3C4CFC0F1D12033500EBFD5D /* Cinder-FrameGraph.cpp in Sources */,
 				C5FE451D2248451697B9D7B0 /* BasicApp.cpp in Sources */,
+				3C1C12F21E42A05F00A615D3 /* OCIO.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -306,19 +312,23 @@
 					"$(inherited)",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"\"$(CINDER_PATH)/include\"",
+					"\"$(CINDER_PATH)/blocks/Cinder-FrameGraph/lib/variant/include\"",
+				);
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				OTHER_LDFLAGS = (
 					"\"$(CINDER_PATH)/lib/libcinder_d.a\"",
-					"\"$(CINDER_PATH)/blocks/Cinder-OCIO/lib/OpenColorIO/build/lib/libOpenColorIO.a\"",
-					"\"$(CINDER_PATH)/blocks/Cinder-OCIO/lib/OpenColorIO/build/ext/dist/lib/libyaml-cpp.a\"",
-					"\"$(CINDER_PATH)/blocks/Cinder-OCIO/lib/OpenColorIO/build/ext/dist/lib/libtinyxml.a\"",
+					"\"$(CINDER_PATH)/blocks/Cinder-FrameGraph/lib/OpenColorIO/build/lib/libOpenColorIO.a\"",
+					"\"$(CINDER_PATH)/blocks/Cinder-FrameGraph/lib/OpenColorIO/build/ext/dist/lib/libyaml-cpp.a\"",
+					"\"$(CINDER_PATH)/blocks/Cinder-FrameGraph/lib/OpenColorIO/build/ext/dist/lib/libtinyxml.a\"",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.libcinder.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = Basic;
 				SYMROOT = ./build;
-				USER_HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/include\" ../include \"$(CINDER_PATH)/blocks/Cinder-OCIO/include\" \"$(CINDER_PATH)/blocks/Cinder-OCIO/lib/OpenColorIO/build/include\"";
+				USER_HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/include\" ../include \"$(CINDER_PATH)/blocks/Cinder-FrameGraph/include\" \"$(CINDER_PATH)/blocks/Cinder-FrameGraph/lib/OpenColorIO/build/include\"";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -340,20 +350,24 @@
 					"$(inherited)",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"\"$(CINDER_PATH)/include\"",
+					"\"$(CINDER_PATH)/blocks/Cinder-FrameGraph/lib/variant/include\"",
+				);
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				OTHER_LDFLAGS = (
 					"\"$(CINDER_PATH)/lib/libcinder.a\"",
-					"\"$(CINDER_PATH)/blocks/Cinder-OCIO/lib/OpenColorIO/build/lib/libOpenColorIO.a\"",
-					"\"$(CINDER_PATH)/blocks/Cinder-OCIO/lib/OpenColorIO/build/ext/dist/lib/libyaml-cpp.a\"",
-					"\"$(CINDER_PATH)/blocks/Cinder-OCIO/lib/OpenColorIO/build/ext/dist/lib/libtinyxml.a\"",
+					"\"$(CINDER_PATH)/blocks/Cinder-FrameGraph/lib/OpenColorIO/build/lib/libOpenColorIO.a\"",
+					"\"$(CINDER_PATH)/blocks/Cinder-FrameGraph/lib/OpenColorIO/build/ext/dist/lib/libyaml-cpp.a\"",
+					"\"$(CINDER_PATH)/blocks/Cinder-FrameGraph/lib/OpenColorIO/build/ext/dist/lib/libtinyxml.a\"",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.libcinder.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = Basic;
 				STRIP_INSTALLED_PRODUCT = YES;
 				SYMROOT = ./build;
-				USER_HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/include\" ../include \"$(CINDER_PATH)/blocks/Cinder-OCIO/include\" \"$(CINDER_PATH)/blocks/Cinder-OCIO/lib/OpenColorIO/build/include\"";
+				USER_HEADER_SEARCH_PATHS = "\"$(CINDER_PATH)/include\" ../include \"$(CINDER_PATH)/blocks/Cinder-FrameGraph/include\" \"$(CINDER_PATH)/blocks/Cinder-FrameGraph/lib/OpenColorIO/build/include\"";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
