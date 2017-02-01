@@ -181,11 +181,12 @@ private:
 class TextureIONode : public TextureINode, public TextureONode
 {
 public:
+    virtual void update( const ci::gl::Texture2dRef & texture ) override;
 };
 
 
 //! A node that applies a shader to a texture input.
-class TextureShaderIONode : public TextureINode, public TextureONode
+class TextureShaderIONode : public TextureIONode
 {
 public:
 	static ref< TextureShaderIONode > create( const ci::gl::GlslProgRef & shader )

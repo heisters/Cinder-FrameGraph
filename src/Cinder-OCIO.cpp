@@ -51,6 +51,14 @@ void TextureONode::update( const gl::Texture2dRef & texture )
 {
 	mTexture = texture;
 }
+////////////////////////////////////////////////////////////////////////////////
+// TextureIONode
+
+void TextureIONode::update( const gl::Texture2dRef & texture )
+{
+    TextureONode::update( texture );
+    TextureINode::update( texture );
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // TextureShaderIONode
@@ -75,6 +83,7 @@ void TextureShaderIONode::update( const ci::gl::Texture2dRef & texture )
 		gl::ScopedViewport		scp_viewport( mFbo->getSize() );
 		gl::ScopedMatrices		scp_mtx;
 		gl::ScopedTextureBind	scp_tex( texture, 0 );
+        gl::ScopedColor         scp_color( ColorAf( 1.f, 1.f, 1.f, 1.f ) );
 
 		gl::setMatricesWindow( mFbo->getSize() );
 		gl::multModelMatrix( mModelMatrix );
@@ -89,5 +98,5 @@ void TextureShaderIONode::update( const ci::gl::Texture2dRef & texture )
 
 	auto tex = mFbo->getColorTexture();
 	tex->setTopDown( true );
-	TextureINode::update( tex );
+	TextureIONode::update( tex );
 }
