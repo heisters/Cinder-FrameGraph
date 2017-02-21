@@ -13,99 +13,121 @@
 
 namespace cinder { namespace frame_graph {
 
-//! Abstract base class for all nodes.
+//! Abstract base class for all inlets.
+class Xlet : private Noncopyable
+{
+public:
+};
+
+//! An Inlet accepts \a in_data_ts to its receive method, and returns
+//! \a read_t from its read method.
+template< typename ... in_data_ts, typename read_t = typename std::tuple< ... in_data_ts > >
+class Inlet : public Xlet
+{
+public:
+    typedef connection_container< typename Inlet< ... in_data_ts > > container;
+    typedef ref< typename Inlet< ... in_data_ts > > ref;
+
+    virtual void receive( in_data_ts ... data ) { mData = std::make_tuple( data... ); }
+    virtual const read_t & read() const { return mData; }
+
+private:
+    read_t mData;
+};
+
+//! An Outlet connects to an \a out_data_ts Inlet, and is updated with
+//! \a update_t.
+template< typename update_t, typename ... out_data_ts >
+class Outlet : public Xlet
+{
+public:
+    typedef typename Inlet< ... out_data_ts > inlet_t;
+
+    virtual void update( update_t data )
+    {
+        for ( auto & c : mConnections ) {
+            c->receive( data );
+        }
+    }
+    
+    bool connect( const inlet_t::ref & in ) { return mConnections.insert( in ); }
+    bool disconnect( const inlet_t::ref & in ) { return mConnections.erase( in ); }
+    void disconnect() { mConnections.clear(); }
+    bool isConnected() const { return ! mConnections.empty(); }
+
+private:
+    typename inlet_t::container mConnections;
+};
+
+template< typename xlet_t, typename ... data_ts >
+class Xlets
+{
+public:
+    typedef std::tuple< xlet_t< in_data_ts > ... > tuple;
+
+    template< size_t I >
+    auto get() const { return std::get< I >( mTuple ); }
+
+    template< typename T >
+    auto get() const { return std::get< T >( mTuple ); }
+
+private:
+    tuple mTuple;
+};
+
+template< typename ... in_data_ts >
+class Inlets : public Xlets< Inlet, ... in_data_ts >
+{
+public:
+};
+
+template< typename ... out_data_ts >
+class Outlets : public Xlets< Outlet, ... out_data_ts >
+{
+public:
+};
+
+
+template< typename inlets_t, typename outlets_t >
 class Node : private Noncopyable
 {
 public:
-};
+    template< size_t I >
+    auto in() const { return mInlets.get< I >(); }
 
-//! An output node accepts input from a single node.
-class ONode : public Node
-{
-public:
-	virtual void update() {};
+    template< typename T >
+    auto in() const { return mInlets.get< T >(); }
+
+    template< size_t I >
+    auto out() const { return mOutlets.get< I >(); }
+
+    template< typename T >
+    auto out() const { return mOutlets.get< T >(); }
+
+    virtual void update()
+    {
+        for ( const auto & in : mInlets ) {
+            out< 0 >()->update( in.read() );
+        }
+    }
 private:
-};
-
-//! An input node provides input to many outputs.
-template< class o_node_t >
-class INode : public Node
-{
-public:
-	typedef NodeContainer< o_node_t > output_container_t;
-
-	//! Add an \a output to this node.
-	virtual void connect( const o_node_t & output )
-	{
-		assert( output != nullptr );
-		mOutputs.push_back( output );
-	}
-
-	//! Remove an \a output from this node.
-	virtual void disconnect( const o_node_t & output )
-	{
-		mOutputs.erase( remove( mOutputs.begin(), mOutputs.end(), output ), mOutputs.end() );
-	}
-
-	//! Remove all outputs from this node.
-	virtual void disconnect()
-	{
-		mOutputs.clear();
-	}
-
-	//! Updates all connected outputs. Override in order to pass data to output
-	//! nodes.
-	virtual void update()
-	{
-		for ( auto & output : mOutputs ) output->update();
-	}
-
-	//! Returns true if this node is connected to any outputs.
-	bool isConnected() const { return ! mOutputs.empty(); }
-
-protected:
-	output_container_t mOutputs;
-};
-
-//! A node that takes multiple inputs.
-template< class o_node_t, class o_node_ref_t = ref< o_node_t > >
-class MuxONode
-{
-public:
-	static MuxONodeRef< o_node_t > create( std::size_t size )
-	{
-		return std::make_shared< MuxONode< o_node_t > >( size );
-	}
-
-	MuxONode( std::size_t size )
-	{
-		mONodes.reserve( size );
-		for ( size_t i = 0; i < size; ++i ) mONodes.push_back( o_node_t::create() );
-	}
-
-	const NodeContainer< o_node_ref_t > & onodes() { return mONodes; }
-
-private:
-	NodeContainer< o_node_ref_t >	mONodes;
+    inlets_t    mInlets;
+    outlets_t   mOutlets;
 };
 
 
 //! A node that accepts an image input.
-class ImageONode : public ONode
+class ImageONode : public Node< Inlets< Surface32fRef >, Outlets<> >
 {
 public:
-	using ONode::update;
-	//! Descendants must do something with an image in their update.
-	virtual void update( const Surface32fRef & image ) = 0;
 };
 typedef ref< ImageONode > ImageONodeRef;
 
 //! A node that provides an image as input to its outputs.
-class ImageINode : public INode< ImageONodeRef >
+class ImageINode : public Node< Inlets<>, Outlets< Surface32fRef > >
 {
 public:
 };
-
 
 //! A node that accepts an image input, and then provides an image to its outputs.
 class ImageIONode : public ImageINode, public ImageONode
@@ -131,7 +153,7 @@ public:
 	operator const ci::Surface32fRef & () const { return getSurface(); }
 
 private:
-	ci::Surface32fRef		mSurface;
+	Surface32fRef mSurface;
 };
 
 
@@ -147,9 +169,6 @@ public:
 
 	TextureONode();
 
-	using ImageONode::update;
-	virtual void update( const Surface32fRef & image ) override;
-	virtual void update( const ci::gl::Texture2dRef & texture );
 
 	void clear() { mTexture = nullptr; }
 	const ci::gl::Texture2dRef getTexture() const { return mTexture; }

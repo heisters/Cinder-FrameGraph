@@ -16,25 +16,25 @@ mSurface( surface )
 {
 }
 
-void SurfaceINode::update()
-{
-	for ( auto & output : mOutputs ) output->update( mSurface );
-}
+//void SurfaceINode::update()
+//{
+//	for ( auto & output : mOutputs ) output->update( mSurface );
+//}
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // TextureINode
 
-void TextureINode::update()
-{
-	for ( auto & output : mOutputs ) output->update( mOutTex );
-}
+//void TextureINode::update()
+//{
+//	for ( auto & output : mOutputs ) output->update( mOutTex );
+//}
 
-void TextureINode::update( const gl::Texture2dRef & texture )
-{
-	mOutTex = texture;
-	for ( auto & output : mOutputs ) output->update( mOutTex );
-}
+//void TextureINode::update( const gl::Texture2dRef & texture )
+//{
+//	mOutTex = texture;
+//	for ( auto & output : mOutputs ) output->update( mOutTex );
+//}
 
 ////////////////////////////////////////////////////////////////////////////////
 // TextureONode
@@ -42,15 +42,15 @@ void TextureINode::update( const gl::Texture2dRef & texture )
 TextureONode::TextureONode()
 {}
 
-void TextureONode::update( const Surface32fRef & image )
-{
-	mTexture = gl::Texture2d::create( *image );
-}
-
-void TextureONode::update( const gl::Texture2dRef & texture )
-{
-	mTexture = texture;
-}
+//void TextureONode::update( const Surface32fRef & image )
+//{
+//	mTexture = gl::Texture2d::create( *image );
+//}
+//
+//void TextureONode::update( const gl::Texture2dRef & texture )
+//{
+//	mTexture = texture;
+//}
 ////////////////////////////////////////////////////////////////////////////////
 // TextureIONode
 
