@@ -8,6 +8,8 @@ using namespace cinder;
 using namespace frame_graph;
 using namespace std;
 
+size_t Xlet::sId = 0;
+
 ////////////////////////////////////////////////////////////////////////////////
 // SurfaceINode
 
@@ -16,48 +18,63 @@ mSurface( surface )
 {
 }
 
-//void SurfaceINode::update()
-//{
-//	for ( auto & output : mOutputs ) output->update( mSurface );
-//}
+void SurfaceINode::update()
+{
+	out< 0 >().update( mSurface );
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // TextureINode
 
-//void TextureINode::update()
-//{
-//	for ( auto & output : mOutputs ) output->update( mOutTex );
-//}
+void TextureINode::update()
+{
+	out< 0 >().update( mTexture );
+}
 
-//void TextureINode::update( const gl::Texture2dRef & texture )
-//{
-//	mOutTex = texture;
-//	for ( auto & output : mOutputs ) output->update( mOutTex );
-//}
+void TextureINode::update( const gl::Texture2dRef & texture )
+{
+	mTexture = texture;
+	out< 0 >().update( mTexture );
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // TextureONode
 
 TextureONode::TextureONode()
-{}
+{
+	in< 0 >().onReceive( [&]( const gl::Texture2dRef & tex ) {
+		update( tex );
+	} );
+	in< 1 >().onReceive( [&]( const Surface32fRef & img ) {
+		update( img );
+	} );
+}
 
-//void TextureONode::update( const Surface32fRef & image )
-//{
-//	mTexture = gl::Texture2d::create( *image );
-//}
-//
-//void TextureONode::update( const gl::Texture2dRef & texture )
-//{
-//	mTexture = texture;
-//}
+void TextureONode::update( const Surface32fRef & image )
+{
+	update( gl::Texture2d::create( *image ) );
+}
+
+void TextureONode::update( const gl::Texture2dRef & texture )
+{
+	mTexture = texture;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // TextureIONode
 
+TextureIONode::TextureIONode()
+{
+	in< 0 >().onReceive( [&]( const gl::Texture2dRef & tex ) {
+		update( tex );
+	} );
+}
+
 void TextureIONode::update( const gl::Texture2dRef & texture )
 {
-    TextureONode::update( texture );
-    TextureINode::update( texture );
+	mTexture = texture;
+	out< 0 >().update( mTexture );
 }
 
 ////////////////////////////////////////////////////////////////////////////////

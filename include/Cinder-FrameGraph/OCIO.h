@@ -53,7 +53,7 @@ private:
 
 
 //! A node that does basic processing.
-class ProcessIONode : public ImageIONode
+class ProcessIONode : public Node< Inlets< Surface32fRef >, Outlets< Surface32fRef > >
 {
 public:
 	static ProcessIONodeRef create( const Config & config,
@@ -67,12 +67,10 @@ public:
 		const std::string & src,
 		const std::string & dst );
 
-	virtual void update( const Surface32fRef & image ) override;
+	virtual void update( const Surface32fRef & image );
 
 	const Config & getConfig() const { return mConfig; }
 private:
-	virtual void update() override {};
-
 	Config						mConfig;
 	core::ConstProcessorRcPtr	mProcessor;
 };

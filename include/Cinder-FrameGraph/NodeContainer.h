@@ -5,22 +5,30 @@ namespace cinder { namespace frame_graph {
 template< class T >
 using ref = std::shared_ptr< T >;
 
-template< typename value_t >
+struct reference_wrapper_compare {
+	template< typename A, typename B >
+	bool operator() ( const std::reference_wrapper< A > & lhs, const std::reference_wrapper< B > & rhs) const {
+		return lhs.get() < rhs.get();
+	}
+};
+
+
+template< typename value_t, typename compare = std::less< value_t > >
 class connection_container {
 public:
     typedef value_t value_type;
-    typedef typename ref< value_t > ref;
+	typedef std::vector< value_type > vector_type;
+	typedef std::set< value_type, compare > set_type;
 
-    bool insert( const ref & member ) {
-        assert( member != nullptr );
-        if ( mSet.insert( member ) ) {
+    bool insert( const value_t & member ) {
+        if ( mSet.insert( member ).second ) {
             mVector.push_back( member );
             return true;
         }
         return false;
     }
 
-    bool erase( const ref & member ) {
+    bool erase( const value_t & member ) {
         if ( mSet.erase( member ) ) {
             mVector.erase( remove( mVector.begin(), mVector.end(), member ), mVector.end() );
             return true;
@@ -28,8 +36,10 @@ public:
         return false;
     }
 
-    auto cbegin() const { return mVector.cbegin(); }
-    auto cend() const { return mVector.cend(); }
+	typename vector_type::iterator begin() { return mVector.begin(); }
+	typename vector_type::iterator end() { return mVector.end(); }
+	typename vector_type::const_iterator cbegin() const { return mVector.cbegin(); }
+    typename vector_type::const_iterator cend() const { return mVector.cend(); }
 
     void clear()
     {
@@ -38,8 +48,8 @@ public:
     }
 
 private:
-    std::vector< ref > mVector;
-    std::set< ref > mSet;
+    vector_type mVector;
+    set_type mSet;
 
 };
 
@@ -85,6 +95,20 @@ namespace algorithms {
 			  void (a_t::*fn)(const b_t &))
 	{
 		for ( auto & aa : a ) ((*aa).*fn)( b );
+	}
+
+
+	template< std::size_t I = 0, typename FuncT, typename... Tp >
+	inline typename std::enable_if< I == sizeof...(Tp), void >::type
+	call( std::tuple< Tp... > &, FuncT ) // Unused arguments are given no names.
+	{ }
+
+	template< std::size_t I = 0, typename FuncT, typename... Tp >
+	inline typename std::enable_if< I < sizeof...(Tp), void >::type
+	call( std::tuple< Tp... >& t, FuncT f )
+	{
+		f( std::get< I >( t ) );
+		call< I + 1, FuncT, Tp... >( t, f );
 	}
 
 

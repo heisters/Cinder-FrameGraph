@@ -65,7 +65,7 @@ public:
 
 	~QTMovieWriterONode();
 
-	virtual void update( const ci::gl::Texture2dRef & texture ) override;
+	virtual void update( const ci::gl::Texture2dRef & texture );
 	virtual void finish() { mWriter->finish(); }
 
 protected:

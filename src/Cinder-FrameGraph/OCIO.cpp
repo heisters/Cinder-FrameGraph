@@ -61,7 +61,7 @@ void ProcessIONode::update( const Surface32fRef & image )
 
 	mProcessor->apply( pid );
 
-	for ( auto & output : mOutputs ) output->update( image );
+	out< 0 >().update( image );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -286,6 +286,6 @@ void ProcessGPUIONode::update( const gl::Texture2dRef & texture )
 		mBatch->draw();
 	}
 
-	TextureINode::update( mFbo->getColorTexture() );
+	TextureIONode::update( mFbo->getColorTexture() );
 }
 
