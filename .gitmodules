@@ -1,6 +1,3 @@
 [submodule "lib/OpenColorIO"]
 	path = lib/OpenColorIO
 	url = git@github.com:imageworks/OpenColorIO.git
-[submodule "lib/variant"]
-	path = lib/variant
-	url = git@github.com:mapbox/variant.git

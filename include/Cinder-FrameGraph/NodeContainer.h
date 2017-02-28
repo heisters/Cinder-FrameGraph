@@ -13,14 +13,15 @@ struct reference_wrapper_compare {
 };
 
 
-template< typename value_t, typename compare = std::less< value_t > >
+template< typename V >
 class connection_container {
 public:
-    typedef value_t value_type;
-	typedef std::vector< value_type > vector_type;
-	typedef std::set< value_type, compare > set_type;
+    typedef reference_wrapper_compare           compare;
+    typedef std::reference_wrapper< V >         value_type;
+	typedef std::vector< value_type >           vector_type;
+	typedef std::set< value_type, compare >     set_type;
 
-    bool insert( const value_t & member ) {
+    bool insert( const value_type & member ) {
         if ( mSet.insert( member ).second ) {
             mVector.push_back( member );
             return true;
@@ -28,9 +29,11 @@ public:
         return false;
     }
 
-    bool erase( const value_t & member ) {
+    bool erase( const value_type & member ) {
         if ( mSet.erase( member ) ) {
-            mVector.erase( remove( mVector.begin(), mVector.end(), member ), mVector.end() );
+            mVector.erase( remove_if( mVector.begin(), mVector.end(), [&]( const value_type & m ) {
+                return m.get() == member.get();
+            } ), mVector.end() );
             return true;
         }
         return false;
@@ -41,6 +44,8 @@ public:
 	typename vector_type::const_iterator cbegin() const { return mVector.cbegin(); }
     typename vector_type::const_iterator cend() const { return mVector.cend(); }
 
+    bool empty() const { return mSet.empty(); }
+
     void clear()
     {
         mVector.clear();
@@ -50,10 +55,12 @@ public:
 private:
     vector_type mVector;
     set_type mSet;
-
 };
 
 namespace algorithms {
+    ///////////////////////////////////////////////////////////////////////////
+    // connection_container algorithms
+    ///////////////////////////////////////////////////////////////////////////
 	template< class value_t, class return_t, class ref_t = ref< value_t > >
 	void call(connection_container< value_t > & container,
 			  return_t (ref_t::element_type::*fn)(void))
@@ -98,49 +105,88 @@ namespace algorithms {
 	}
 
 
-	template< std::size_t I = 0, typename FuncT, typename... Tp >
-	inline typename std::enable_if< I == sizeof...(Tp), void >::type
-	call( std::tuple< Tp... > &, FuncT ) // Unused arguments are given no names.
+    template< class T, typename ref_t = ref< T > >
+    void update( connection_container< T > & connections )
+    {
+        call( connections, &ref_t::element_type::update );
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // std::tuple algorithms
+    ///////////////////////////////////////////////////////////////////////////
+
+    template< typename V >
+    using iterator_function = std::function< void( V& ) >;
+    template< typename V >
+    using iterator_with_index_function = std::function< void( V&, std::size_t ) >;
+
+	// call a function on each member of a tuple
+    template<
+        typename V,
+        std::size_t I = 0,
+        typename... Tp
+    >
+	inline typename std::enable_if< I == sizeof...(Tp) >::type
+	call( std::tuple< Tp... > &, iterator_function< V > ) // Unused arguments are given no names.
 	{ }
 
-	template< std::size_t I = 0, typename FuncT, typename... Tp >
-	inline typename std::enable_if< I < sizeof...(Tp), void >::type
-	call( std::tuple< Tp... >& t, FuncT f )
+	template<
+        typename V,
+        std::size_t I = 0,
+        typename... Tp
+    >
+	inline typename std::enable_if< I < sizeof...(Tp) >::type
+	call( std::tuple< Tp... >& t, iterator_function< V > f )
 	{
 		f( std::get< I >( t ) );
-		call< I + 1, FuncT, Tp... >( t, f );
+		call< V, I + 1, Tp... >( t, f );
 	}
 
 
-	template< class T, typename ref_t = ref< T > >
-	void update( connection_container< T > & connections )
-	{
-		call( connections, &ref_t::element_type::update );
-	}
-}
-
-namespace operators {
+    // call a function on each member of a tuple, passing the member index as the second
+    // parameter
     template<
-        typename in_t,
-        typename out_t
+        typename V,
+        std::size_t I = 0,
+        typename... Tp
     >
-        inline const connection_container< out_t >& operator >> ( connection_container< in_t > & inputs,
-            const connection_container< out_t > & outputs )
+    inline typename std::enable_if< I == sizeof...( Tp ) >::type
+    call( std::tuple< Tp... > &, iterator_with_index_function< V > ) // Unused arguments are given no names.
+    { }
+
+    template<
+        typename V,
+        std::size_t I = 0,
+        typename... Tp
+    >
+    inline typename std::enable_if< I < sizeof...( Tp ) >::type
+    call( std::tuple< Tp... >& t, iterator_with_index_function< V > f )
     {
-        algorithms::call( inputs, outputs, &in_t::connect );
-        return outputs;
+        f( std::get< I >( t ), I );
+        call< V, I + 1, Tp... >( t, f );
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // std::array algorithms
+    ///////////////////////////////////////////////////////////////////////////
+
+    template<
+        typename V,
+        std::size_t I
+    >
+    void call( std::array< V, I > & a, iterator_function< V > f )
+    {
+        for ( auto & v : a ) f( v );
     }
 
     template<
-        typename in_t,
-        typename out_t,
-        typename out_ref_t = ref< out_t >
+        typename V,
+        std::size_t I
     >
-        inline const out_ref_t & operator >> ( connection_container< in_t > & inputs,
-            const out_ref_t & output )
+    void call( std::array< V, I > & a, iterator_with_index_function< V > f )
     {
-        algorithms::call( inputs, output, &in_t::connect );
-        return output;
+        std::size_t i = 0;
+        for ( auto & v : a ) f( v, i++ );
     }
 }
 

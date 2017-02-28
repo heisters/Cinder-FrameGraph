@@ -19,11 +19,15 @@ public:
 	Xlet() : mId( sId++ ) {}
 
 	bool operator< ( const Xlet & b ) { return mId < b.mId; }
+    bool operator== ( const Xlet& b ) { return mId == b.mId; }
 
 private:
 	static size_t sId;
 	size_t mId;
 };
+
+template< typename out_t >
+class Outlet;
 
 //! An Inlet accepts \a in_data_ts to its receive method, and returns
 //! \a read_t from its read method.
@@ -33,6 +37,8 @@ class Inlet : public Xlet
 public:
 	typedef in_t type;
 	typedef ci::signals::Signal< void( const in_t & ) > receive_signal;
+    typedef Outlet< type > outlet_type;
+    friend outlet_type;
 
     virtual void receive( const in_t & data ) { mReceiveSignal.emit( data ); }
 
@@ -41,8 +47,16 @@ public:
 		return mReceiveSignal.connect( fn );
 	}
 
+protected:
+    bool connect( outlet_type & out ) { return mConnections.insert( out ); }
+    bool disconnect( outlet_type & out ) { return mConnections.erase( out ); }
+    void disconnect() { mConnections.clear(); }
+public:
+    bool isConnected() const { return ! mConnections.empty(); }
+
 private:
 	receive_signal mReceiveSignal;
+    connection_container< outlet_type > mConnections;
 };
 
 //! An Outlet connects to an \a out_data_ts Inlet, and is updated with
@@ -52,8 +66,7 @@ class Outlet : public Xlet
 {
 public:
 	typedef out_t type;
-	typedef Inlet< out_t > inlet_t;
-	typedef typename std::reference_wrapper< inlet_t > inlet_ref_t;
+	typedef Inlet< type > inlet_type;
 
     virtual void update( const out_t & in )
     {
@@ -62,86 +75,121 @@ public:
         }
     }
     
-    bool connect( const inlet_ref_t & in ) { return mConnections.insert( in ); }
-    bool disconnect( const inlet_ref_t & in ) { return mConnections.erase( in ); }
-    void disconnect() { mConnections.clear(); }
+    bool connect( inlet_type & in )
+    {
+        in.connect( *this );
+        return mConnections.insert( in );
+    }
+    bool disconnect( inlet_type & in )
+    {
+        in.disconnect( *this );
+        return mConnections.erase( in );
+    }
+    void disconnect()
+    {
+        for ( auto & i : mConnections ) i.get().disconnect( *this );
+        mConnections.clear();
+    }
     bool isConnected() const { return ! mConnections.empty(); }
 
 private:
-    connection_container< inlet_ref_t, reference_wrapper_compare > mConnections;
+    connection_container< inlet_type > mConnections;
 };
 
-
-template< typename ... in_data_ts >
-class Inlets
+//! Provides a common interface for hetero- and homo-geneous inlets.
+template< typename T >
+class AbstractInlets
 {
 public:
-	typedef typename std::tuple< Inlet< in_data_ts >... > in_tuple;
+    typedef T inlets_container_type;
+    
+    static constexpr std::size_t in_size = std::tuple_size< inlets_container_type >::value;
 
-	template< std::size_t I >
-	using in_type = typename std::tuple_element< I, in_tuple >::type;
+    template< std::size_t I >
+    using inlet_type = typename std::tuple_element< I, inlets_container_type >::type;
 
+    template< std::size_t I >
+    inlet_type< I > & in() { return std::get< I >( mInlets ); }
+    template< std::size_t I >
+    inlet_type< I > const & in() const { return std::get< I >( mInlets ); }
 
-	template< std::size_t I >
-	in_type< I > & in() { return std::get< I >( mInlets ); }
-	template< std::size_t I >
-	in_type< I > const & in() const { return std::get< I >( mInlets ); }
+    template< typename V >
+    void each_in( algorithms::iterator_function< V > fn ) { return algorithms::call< V >( mInlets, fn ); }
+
+    template< typename V >
+    void each_in( algorithms::iterator_with_index_function< V > fn ) { return algorithms::call< V >( mInlets, fn ); }
+
+    inline inlets_container_type & inlets() { return mInlets; }
+    inline const inlets_container_type & inlets() const { return mInlets; }
 
 protected:
-	in_tuple mInlets;
+    inlets_container_type mInlets;
 };
 
-template< typename ... out_data_ts >
-class Outlets
+//! Provides a common interface for hetero- and homo-geneous outlets.
+template< typename T >
+class AbstractOutlets
 {
 public:
-	typedef std::tuple< Outlet< out_data_ts >... > out_tuple;
+    typedef T outlets_container_type;
+    static constexpr std::size_t out_size = std::tuple_size< outlets_container_type >::value;
 
-	template< std::size_t I >
-	using out_type = typename std::tuple_element< I, out_tuple >::type;
+    template< std::size_t I >
+    using outlet_type = typename std::tuple_element< I, outlets_container_type >::type;
 
 
-	template< std::size_t I >
-	out_type< I > & out() { return std::get< I >( mOutlets ); }
-	template< std::size_t I >
-	out_type< I > const & out() const { return std::get< I >( mOutlets ); }
+    template< std::size_t I >
+    outlet_type< I > & out() { return std::get< I >( mOutlets ); }
+    template< std::size_t I >
+    outlet_type< I > const & out() const { return std::get< I >( mOutlets ); }
+
+    template< typename V >
+    void each_out( algorithms::iterator_function< V > fn ) { return algorithms::call< V >( mOutlets, fn ); }
+
+    template< typename V >
+    void each_out( algorithms::iterator_with_index_function< V > fn ) { return algorithms::call< V >( mOutlets, fn ); }
+
+    inline outlets_container_type & outlets() { return mOutlets; }
+    inline const outlets_container_type & outlets() const { return mOutlets; }
 
 protected:
-	out_tuple mOutlets;
+    outlets_container_type mOutlets;
+};
+
+//! A collection of heterogeneous Inlets
+template< typename ... T >
+class Inlets : public AbstractInlets< std::tuple< Inlet< T >... > >
+{
+public:
+};
+
+//! A collection of homogeneous Inlets
+template< typename T, std::size_t I >
+class UniformInlets : public AbstractInlets< std::array< Inlet< T >, I > >
+{
+public:
+};
+
+//! A collection of heterogeneous Outlets
+template< typename ... T >
+class Outlets : public AbstractOutlets< std::tuple< Outlet< T >... > >
+{
+public:
+};
+
+//! A collection of homogeneous Outlets
+template< typename T, std::size_t I >
+class UniformOutlets : public AbstractOutlets< std::array< Outlet< T >, I > >
+{
+public:
 };
 
 
-template< typename inlets_t, typename outlets_t >
-class Node : private Noncopyable, public inlets_t, public outlets_t
+//! A node has inlets and outlets, specified by its template arguments
+template< typename Ti, typename To >
+class Node : private Noncopyable, public Ti, public To
 {
 public:
-	//! Default update for one inlet, one outlet
-	template<
-		typename in_tuple = typename inlets_t::in_tuple,
-		typename out_tuple = typename outlets_t::out_tuple
-	>
-	typename std::enable_if<
-		std::tuple_size< in_tuple >::value == 1 &&
-		std::tuple_size< out_tuple >::value == 1
-	>::type update()
-	{
-		auto data = this->template in< 0 >()->read();
-		this->template out< 0 >()->update( data );
-	}
-
-	//! Default update for no inlets, one outlet
-	template<
-		typename in_tuple = typename inlets_t::in_tuple,
-		typename out_tuple = typename outlets_t::out_tuple
-	>
-	typename std::enable_if<
-		std::tuple_size< in_tuple >::value == 0 &&
-		std::tuple_size< out_tuple >::value == 1
-	>::type update()
-	{
-		this->template out< 0 >()->update();
-	}
-
 };
 
 
@@ -186,7 +234,7 @@ private:
 class TextureONode : public Node< Inlets< gl::Texture2dRef, Surface32fRef >, Outlets<> >
 {
 public:
-	static ref< TextureONode > create()
+	static TextureONodeRef create()
 	{
 		return std::make_shared< TextureONode >();
 	}
@@ -223,7 +271,7 @@ private:
 class TextureShaderIONode : public TextureIONode
 {
 public:
-	static ref< TextureShaderIONode > create( const ci::gl::GlslProgRef & shader )
+	static TextureShaderIONodeRef create( const ci::gl::GlslProgRef & shader )
 	{
 		return std::make_shared< TextureShaderIONode >( shader );
 	}
@@ -236,36 +284,32 @@ private:
 	ci::mat4 mModelMatrix;
 };
 
-
-//! A node that is comprised of other nodes
-template < typename ... Types >
-class CompoundNode
-{
-public:
-	typedef std::tuple< Types... > tuple;
-
-	static CompoundNodeRef< Types... > create( const Types& ... nodes )
-	{
-		return std::make_shared< CompoundNode< Types... > >( nodes... );
-	}
-
-	CompoundNode( const Types& ... nodes ) :
-		mNodes{ nodes... }
-	{}
-
-protected:
-	tuple mNodes;
-};
-
 namespace operators {
-	template< typename in_t, typename out_t,
-	typename I = typename in_t::template out_type< 0 >::type,
-	typename O = typename out_t::template in_type< 0 >::type
+    template<
+        typename To,
+        typename Ti,
+        typename I = Ti::type,
+        typename O = To::type
+    >
+    inline const Ti & operator >> ( To & outlet, Ti & inlet )
+    {
+        static_assert( std::is_same< I, O >::value, "Cannot connect outlet to inlet" );
+        outlet.connect( inlet );
+        return inlet;
+    }
+
+	template<
+        typename Ni,
+        typename No,
+        std::size_t Ii = 0,
+        std::size_t Io = 0,
+	    typename Ti = typename Ni::template outlet_type< Ii >::type,
+	    typename To = typename No::template inlet_type< Io >::type
 	>
-	inline const ref< out_t > & operator>>( const ref< in_t > & input, const ref< out_t > & output )
+	inline const ref< No > & operator >> ( const ref< Ni > & input, const ref< No > & output )
 	{
-		static_assert( std::is_same< I, O >::value, "Cannot connect input to output" );
-		input->template out< 0 >().connect( std::ref( output->template in< 0 >() ) );
+		static_assert( std::is_same< Ti, To >::value, "Cannot connect input to output" );
+		input->template out< Ii >() >> output->template in< Io >();
 		return output;
 	}
 }
