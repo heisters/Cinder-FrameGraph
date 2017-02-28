@@ -10,20 +10,26 @@
 #include "Cinder-FrameGraph/NodeContainer.h"
 #include "Cinder-FrameGraph/Types.h"
 
-namespace cinder { namespace frame_graph {
-
-//! Abstract base class for all inlets.
-class Xlet : private Noncopyable
+namespace cinder {
+namespace frame_graph {
+class HasId
 {
 public:
-	Xlet() : mId( sId++ ) {}
+    HasId() : mId( sId++ ) {}
 
-	bool operator< ( const Xlet & b ) { return mId < b.mId; }
+protected:
+    static uint64_t sId;
+    uint64_t mId;
+};
+
+//! Abstract base class for all inlets.
+class Xlet : private Noncopyable, public HasId
+{
+public:
+    bool operator< ( const Xlet & b ) { return mId < b.mId; }
     bool operator== ( const Xlet& b ) { return mId == b.mId; }
 
 private:
-	static size_t sId;
-	size_t mId;
 };
 
 template< typename out_t >
@@ -35,17 +41,17 @@ template< typename in_t >
 class Inlet : public Xlet
 {
 public:
-	typedef in_t type;
-	typedef ci::signals::Signal< void( const in_t & ) > receive_signal;
+    typedef in_t type;
+    typedef ci::signals::Signal< void( const in_t & ) > receive_signal;
     typedef Outlet< type > outlet_type;
     friend outlet_type;
 
     virtual void receive( const in_t & data ) { mReceiveSignal.emit( data ); }
 
-	ci::signals::Connection onReceive( const typename receive_signal::CallbackFn & fn )
-	{
-		return mReceiveSignal.connect( fn );
-	}
+    ci::signals::Connection onReceive( const typename receive_signal::CallbackFn & fn )
+    {
+        return mReceiveSignal.connect( fn );
+    }
 
 protected:
     bool connect( outlet_type & out ) { return mConnections.insert( out ); }
@@ -55,7 +61,7 @@ public:
     bool isConnected() const { return ! mConnections.empty(); }
 
 private:
-	receive_signal mReceiveSignal;
+    receive_signal mReceiveSignal;
     connection_container< outlet_type > mConnections;
 };
 
@@ -65,8 +71,8 @@ template< typename out_t >
 class Outlet : public Xlet
 {
 public:
-	typedef out_t type;
-	typedef Inlet< type > inlet_type;
+    typedef out_t type;
+    typedef Inlet< type > inlet_type;
 
     virtual void update( const out_t & in )
     {
@@ -74,7 +80,7 @@ public:
             c.get().receive( in );
         }
     }
-    
+
     bool connect( inlet_type & in )
     {
         in.connect( *this );
@@ -102,7 +108,7 @@ class AbstractInlets
 {
 public:
     typedef T inlets_container_type;
-    
+
     static constexpr std::size_t in_size = std::tuple_size< inlets_container_type >::value;
 
     template< std::size_t I >
@@ -136,7 +142,6 @@ public:
 
     template< std::size_t I >
     using outlet_type = typename std::tuple_element< I, outlets_container_type >::type;
-
 
     template< std::size_t I >
     outlet_type< I > & out() { return std::get< I >( mOutlets ); }
@@ -184,134 +189,137 @@ class UniformOutlets : public AbstractOutlets< std::array< Outlet< T >, I > >
 public:
 };
 
-
 //! A node has inlets and outlets, specified by its template arguments
 template< typename Ti, typename To >
-class Node : private Noncopyable, public Ti, public To
+class Node : private Noncopyable, public HasId, public Ti, public To
 {
 public:
-};
+    Node() { setLabel( "node" ); }
+    Node( const std::string & label ) { setLabel( label ); }
 
+    void setLabel( const std::string & label ) { mLabel = label + " (" + std::to_string( mId ) + ")"; }
+    std::string getLabel() const { return mLabel; }
+    const std::string & label() const { return mLabel; }
+    std::string & label() { return mLabel; }
+
+private:
+    std::string mLabel;
+};
 
 //! A node that inputs a Cinder Surface32f.
 class SurfaceINode : public Node< Inlets<>, Outlets< Surface32fRef > >
 {
 public:
-	static ref< SurfaceINode > create( const Surface32fRef & surface )
-	{
-		return std::make_shared< SurfaceINode >( surface );
-	}
+    static ref< SurfaceINode > create( const Surface32fRef & surface )
+    {
+        return std::make_shared< SurfaceINode >( surface );
+    }
 
-	SurfaceINode( const Surface32fRef & surface );
+    SurfaceINode( const Surface32fRef & surface );
 
-	virtual void update();
+    virtual void update();
 
-	const ci::Surface32fRef & getSurface() const { return mSurface; }
+    const ci::Surface32fRef & getSurface() const { return mSurface; }
 
-	operator const ci::Surface32fRef & () const { return getSurface(); }
+    operator const ci::Surface32fRef & ( ) const { return getSurface(); }
 
 private:
-	Surface32fRef mSurface;
+    Surface32fRef mSurface;
 };
-
-
 
 //! A node that emits OpenGL textures.
 class TextureINode : public Node< Inlets<>, Outlets< gl::Texture2dRef > >
 {
 public:
-	virtual void update();
+    virtual void update();
 protected:
-	virtual void update( const ci::gl::Texture2dRef & texture );
+    virtual void update( const ci::gl::Texture2dRef & texture );
 
 private:
-	ci::gl::Texture2dRef			mTexture = nullptr;
+    ci::gl::Texture2dRef			mTexture = nullptr;
 };
-
 
 //! A node that represents a Cinder gl::Texture2d, useful for displaying
 //! results.
 class TextureONode : public Node< Inlets< gl::Texture2dRef, Surface32fRef >, Outlets<> >
 {
 public:
-	static TextureONodeRef create()
-	{
-		return std::make_shared< TextureONode >();
-	}
+    static TextureONodeRef create()
+    {
+        return std::make_shared< TextureONode >();
+    }
 
-	TextureONode();
+    TextureONode();
 
-	void update( const Surface32fRef & image );
-	void update( const gl::Texture2dRef & texture );
+    void update( const Surface32fRef & image );
+    void update( const gl::Texture2dRef & texture );
 
-	void clear() { mTexture = nullptr; }
-	const ci::gl::Texture2dRef getTexture() const { return mTexture; }
+    void clear() { mTexture = nullptr; }
+    const ci::gl::Texture2dRef getTexture() const { return mTexture; }
 
-	operator const ci::gl::Texture2dRef () const { return getTexture(); }
-	operator const bool () const { return mTexture != nullptr; }
+    operator const ci::gl::Texture2dRef() const { return getTexture(); }
+    operator const bool() const { return mTexture != nullptr; }
 
-	ci::ivec2 getSize() const { return mTexture->getSize(); }
+    ci::ivec2 getSize() const { return mTexture->getSize(); }
 private:
 
-	ci::gl::Texture2dRef	mTexture = nullptr;
+    ci::gl::Texture2dRef	mTexture = nullptr;
 };
-
 
 class TextureIONode : public Node< Inlets< gl::Texture2dRef >, Outlets< gl::Texture2dRef > >
 {
 public:
-	TextureIONode();
+    TextureIONode();
     virtual void update( const ci::gl::Texture2dRef & texture );
 private:
-	ci::gl::Texture2dRef			mTexture = nullptr;
+    ci::gl::Texture2dRef			mTexture = nullptr;
 };
-
 
 //! A node that applies a shader to a texture input.
 class TextureShaderIONode : public TextureIONode
 {
 public:
-	static TextureShaderIONodeRef create( const ci::gl::GlslProgRef & shader )
-	{
-		return std::make_shared< TextureShaderIONode >( shader );
-	}
-	TextureShaderIONode( const ci::gl::GlslProgRef & shader );
-	virtual void update( const ci::gl::Texture2dRef & texture ) override;
+    static TextureShaderIONodeRef create( const ci::gl::GlslProgRef & shader )
+    {
+        return std::make_shared< TextureShaderIONode >( shader );
+    }
+    TextureShaderIONode( const ci::gl::GlslProgRef & shader );
+    virtual void update( const ci::gl::Texture2dRef & texture ) override;
 
 private:
-	ci::gl::BatchRef mBatch;
-	ci::gl::FboRef mFbo;
-	ci::mat4 mModelMatrix;
+    ci::gl::BatchRef mBatch;
+    ci::gl::FboRef mFbo;
+    ci::mat4 mModelMatrix;
 };
 
 namespace operators {
-    template<
-        typename To,
-        typename Ti,
-        typename I = Ti::type,
-        typename O = To::type
-    >
-    inline const Ti & operator >> ( To & outlet, Ti & inlet )
-    {
-        static_assert( std::is_same< I, O >::value, "Cannot connect outlet to inlet" );
-        outlet.connect( inlet );
-        return inlet;
-    }
-
-	template<
-        typename Ni,
-        typename No,
-        std::size_t Ii = 0,
-        std::size_t Io = 0,
-	    typename Ti = typename Ni::template outlet_type< Ii >::type,
-	    typename To = typename No::template inlet_type< Io >::type
-	>
-	inline const ref< No > & operator >> ( const ref< Ni > & input, const ref< No > & output )
-	{
-		static_assert( std::is_same< Ti, To >::value, "Cannot connect input to output" );
-		input->template out< Ii >() >> output->template in< Io >();
-		return output;
-	}
+template<
+    typename To,
+    typename Ti,
+    typename I = Ti::type,
+    typename O = To::type
+>
+inline const Ti & operator >> ( To & outlet, Ti & inlet )
+{
+    static_assert( std::is_same< I, O >::value, "Cannot connect outlet to inlet" );
+    outlet.connect( inlet );
+    return inlet;
 }
 
-} }
+template<
+    typename Ni,
+    typename No,
+    std::size_t Ii = 0,
+    std::size_t Io = 0,
+    typename Ti = typename Ni::template outlet_type< Ii >::type,
+    typename To = typename No::template inlet_type< Io >::type
+>
+inline const ref< No > & operator >> ( const ref< Ni > & input, const ref< No > & output )
+{
+    static_assert( std::is_same< Ti, To >::value, "Cannot connect input to output" );
+    input->template out< Ii >() >> output->template in< Io >();
+    return output;
+}
+}
+}
+}
