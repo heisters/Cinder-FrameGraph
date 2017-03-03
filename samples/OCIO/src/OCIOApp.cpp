@@ -9,7 +9,8 @@
 #include "Cinder-FrameGraph/QuickTime.h"
 #include "Cinder-FrameGraph/OCIO.h"
 
-#define M_TAU 6.28318530717958647692528676655900576839433879875021
+#include "CubeONode.h"
+
 
 // This config is from https://github.com/imageworks/OpenColorIO-Configs
 const std::string CONFIG_ASSET_PATH = "aces_1.0.1/config.ocio";
@@ -20,73 +21,9 @@ using namespace std;
 using namespace frame_graph::operators;
 
 
-typedef frame_graph::ref< class CubeONode > CubeONodeRef;
-
-class CubeONode : public frame_graph::TextureINode {
+class OCIOApp : public App {
 public:
-	static CubeONodeRef create()
-	{
-		return std::make_shared< CubeONode >();
-	}
-
-	CubeONode();
-	virtual void update() override;
-
-	void resize( const ivec2 & size );
-
-private:
-	gl::BatchRef	mBatch;
-	CameraPersp		mCam;
-	gl::FboRef		mFbo;
-};
-
-
-CubeONode::CubeONode()
-{
-	auto cube = geom::Cube().colors(
-									ColorAf( 1.f, 0.f, 0.f ),
-									ColorAf( 1.f, 1.f, 0.f ),
-									ColorAf( 0.f, 1.f, 0.f ),
-									ColorAf( 0.f, 1.f, 1.f ),
-									ColorAf( 0.f, 0.f, 1.f ),
-									ColorAf( 1.f, 0.f, 1.f )
-									);
-	mBatch = gl::Batch::create( cube, gl::getStockShader( gl::ShaderDef().color() ) );
-}
-
-void CubeONode::resize( const ivec2 &size )
-{
-	mFbo = gl::Fbo::create( size.x , size.y );
-	mFbo->getColorTexture()->setTopDown();
-	mCam = CameraPersp( size.x, size.y, 60.f, 0.1f, 10.f );
-	mCam = mCam.calcFraming( Sphere( vec3(), 1.f ) );
-}
-
-void CubeONode::update()
-{
-	if ( ! mFbo ) return;
-
-	{
-		gl::ScopedFramebuffer	scp_fbo( mFbo );
-		gl::ScopedViewport		scp_viewport( mFbo->getSize() );
-		gl::ScopedMatrices		scp_mtx;
-		gl::ScopedDepth			scp_depth( true );
-		gl::ScopedBlendAlpha	scp_alpha;
-
-		gl::setMatrices( mCam );
-		gl::multModelMatrix( rotate( (float)( M_TAU * 0.1 * app::getElapsedSeconds() ), vec3( 1.f, 0.f, 1.f ) ) );
-
-		gl::clear();
-
-		mBatch->draw();
-	}
-
-	TextureINode::update( mFbo->getColorTexture() );
-}
-
-class BasicApp : public App {
-public:
-	BasicApp();
+	OCIOApp();
 
 	void setup() override;
 	void resize() override;
@@ -126,7 +63,7 @@ private:
 
 const static string VIEW_MENU_NAME = "View";
 
-BasicApp::BasicApp() :
+OCIOApp::OCIOApp() :
 mConfig( getAssetPath( CONFIG_ASSET_PATH ) )
 {
 	mInputColorSpaceNames = mConfig.getAllColorSpaceNames();
@@ -139,7 +76,7 @@ mConfig( getAssetPath( CONFIG_ASSET_PATH ) )
 	mLookNames.insert( mLookNames.begin(), "" );
 }
 
-void BasicApp::setup()
+void OCIOApp::setup()
 {
 	/***************************************************************************
 	 * Create node graph
@@ -168,6 +105,7 @@ void BasicApp::setup()
 	 * Setup split interface
 	 */
 
+
 	vec2 size = mMovieNode->getSize();
 	ivec2 dsize = getDisplay()->getSize();
 	vec2 maxSize = dsize - ivec2( 20, 20 );
@@ -182,6 +120,7 @@ void BasicApp::setup()
 	 * Create param panel
 	 */
 
+	
 	mParams = params::InterfaceGl::create( getWindow(), "Parameters", toPixels( ivec2( 400, 200 ) ) );
 
 
@@ -214,12 +153,12 @@ void BasicApp::setup()
 	resize();
 }
 
-void BasicApp::resize()
+void OCIOApp::resize()
 {
 	mCubeNode->resize( getWindowSize() );
 }
 
-void BasicApp::updateViewOptions()
+void OCIOApp::updateViewOptions()
 {
 	mParams->removeParam( VIEW_MENU_NAME );
 	mViewIdx = 0;
@@ -235,19 +174,19 @@ void BasicApp::updateViewOptions()
 	.updateFn([&]{ mProcessNode->setViewColorSpace( mViewNames[ mViewIdx ] ); });
 }
 
-void BasicApp::mouseDrag( MouseEvent event )
+void OCIOApp::mouseDrag( MouseEvent event )
 {
 	if ( event.isLeftDown() ) {
 		mSplitX = event.getX();
 	}
 }
 
-void BasicApp::mouseDown( MouseEvent event )
+void OCIOApp::mouseDown( MouseEvent event )
 {
 	mSplitX = event.getX();
 }
 
-void BasicApp::update()
+void OCIOApp::update()
 {
 	mFPS = getAverageFps();
 
@@ -258,7 +197,7 @@ void BasicApp::update()
 	}
 }
 
-void BasicApp::draw()
+void OCIOApp::draw()
 {
 	gl::clear();
 	vec2 size = getWindowSize();
@@ -286,4 +225,4 @@ void BasicApp::draw()
 	mParams->draw();
 }
 
-CINDER_APP( BasicApp, RendererGl( RendererGl::Options().msaa( 16 ) ) )
+CINDER_APP( OCIOApp, RendererGl( RendererGl::Options().msaa( 16 ) ) )
