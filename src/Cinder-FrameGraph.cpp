@@ -8,7 +8,6 @@ using namespace cinder;
 using namespace frame_graph;
 using namespace std;
 
-uint64_t HasId::sId = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
 // SurfaceINode

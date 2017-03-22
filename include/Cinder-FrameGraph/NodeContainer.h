@@ -1,4 +1,10 @@
 #pragma once
+#include <cstddef>
+#include <functional>
+#include <algorithm>
+#include <memory>
+#include <vector>
+#include <set>
 
 namespace cinder {
 namespace frame_graph {
@@ -31,7 +37,7 @@ public:
 
     bool erase( const value_type & member ) {
         if ( mSet.erase( member ) ) {
-            mVector.erase( remove_if( mVector.begin(), mVector.end(), [&]( const value_type & m ) {
+            mVector.erase( std::remove_if( mVector.begin(), mVector.end(), [&]( const value_type & m ) {
                 return m.get() == member.get();
             } ), mVector.end() );
             return true;
@@ -46,7 +52,7 @@ public:
 
     bool empty() const { return mSet.empty(); }
 
-    size_t size() const { return mSet.size(); }
+    std::size_t size() const { return mSet.size(); }
 
     void clear()
     {
