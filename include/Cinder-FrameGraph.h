@@ -17,6 +17,8 @@ class HasId
 public:
     HasId() : mId( sId++ ) {}
 
+    uint64_t id() const { return mId; }
+
 protected:
     static uint64_t sId;
     uint64_t mId;
@@ -59,6 +61,7 @@ protected:
     void disconnect() { mConnections.clear(); }
 public:
     bool isConnected() const { return ! mConnections.empty(); }
+    size_t numConnections() const { return mConnections.size(); }
 
 private:
     receive_signal mReceiveSignal;
@@ -97,6 +100,7 @@ public:
         mConnections.clear();
     }
     bool isConnected() const { return ! mConnections.empty(); }
+    size_t numConnections() const { return mConnections.size(); }
 
 private:
     connection_container< inlet_type > mConnections;
