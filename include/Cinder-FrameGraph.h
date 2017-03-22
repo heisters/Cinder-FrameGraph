@@ -300,8 +300,8 @@ namespace operators {
 template<
     typename To,
     typename Ti,
-    typename I = Ti::type,
-    typename O = To::type
+    typename I = typename Ti::type,
+    typename O = typename To::type
 >
 inline const Ti & operator >> ( To & outlet, Ti & inlet )
 {
