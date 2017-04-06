@@ -59,16 +59,17 @@ template< typename... T >
 class Visitor;
 
 template< typename T >
-class Visitor< T > : public VisitorBase
+class Visitor< T > : virtual public VisitorBase
 {
 public:
     virtual void visit( T & ) = 0;
 };
 
 template< typename T, typename... Ts >
-class Visitor< T, Ts... > : public Visitor< Ts... >
+class Visitor< T, Ts... > : public Visitor< T >, public Visitor< Ts... >
 {
 public:
+    using Visitor< T >::visit;
     using Visitor< Ts... >::visit;
 
     virtual void visit( T & ) = 0;
@@ -78,12 +79,6 @@ template< class ... T >
 class NodeVisitor : public Visitor< T... >
 {
 public:
-
-
-    bool tryVisit( AnyNode & node )
-    {
-        return node.tryAccept< NodeVisitor< T... >, T... >( *this );
-    }
 };
 
 class AnyNode
@@ -92,18 +87,13 @@ class AnyNode
     {
         virtual ~Concept() = default;
 
-        template< typename T >
-        T * tryCast()
+        template< typename V >
+        void accept( V & visitor )
         {
-            Model< T > * m = dynamic_cast< Model< T >* >( this );
-
-            if ( m ) {
-                return &(*m)();
-            } else {
-                return nullptr;
-            }
+            acceptDispatch( &visitor );
         }
 
+        virtual void acceptDispatch( VisitorBase * ) = 0;
     };
 
     template< typename T >
@@ -111,8 +101,14 @@ class AnyNode
     {
         Model( T &n ) : node( n ) {}
 
-        T & operator()() { return node; }
-        const T & operator()() const { return node; }
+
+        void acceptDispatch( VisitorBase * v ) override
+        {
+            auto visitor = dynamic_cast< Visitor< T >* >( v );
+            if ( visitor ) {
+                node.accept( *visitor );
+            }
+        }
 
     private:
         T &node;
@@ -126,29 +122,11 @@ public:
             mConcept( new Model< T >( node )) {}
 
 
-    template< typename T >
-    T * tryCast()
-    {
-        return mConcept->tryCast< T >();
-    }
-
     template< typename V >
-    bool tryAccept( V & visitor )
+    void accept( V & visitor )
     {
-        return false;
-    };
-
-    template< typename V, typename T, typename ... Ts >
-    bool tryAccept( V & visitor )
-    {
-        T * n = tryCast< T >();
-        if ( n ) {
-            n->accept( visitor );
-            return true;
-        } else {
-            return tryAccept< V, Ts... >( visitor );
-        }
-    };
+        mConcept->accept( visitor );
+    }
 };
 
 
@@ -168,7 +146,7 @@ class VisitableNode : public Visitable
             for ( auto &inlet : outlet.connections()) {
                 auto n = inlet.get().node();
                 if ( n != nullptr ) {
-                    visitor.tryVisit( *n );
+                    n->accept( visitor );
                 }
             }
         }
