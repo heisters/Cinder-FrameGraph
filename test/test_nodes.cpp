@@ -8,7 +8,7 @@ using namespace std;
 using namespace Catch;
 using namespace frame_graph::operators;
 
-class Int_IONode : public Node< Inlets< int >, Outlets< int > >, public VisitableNode< Int_IONode > {
+class Int_IONode : public Node< Inlets< int >, Outlets< int > > {
 public:
     Int_IONode( const string &label ) : Node< Inlets< int >, Outlets< int > >( label ) {
         in< 0 >().onReceive( [&]( const int &i ) {
@@ -72,9 +72,9 @@ SCENARIO( "With two connected nodes", "[nodes]" ) {
     }
 
     GIVEN( "a visitor" ) {
-        class Int_IONodeVisitor : public NodeVisitor< Int_IONode >, private frame_graph::Noncopyable {
+        class Int_IONodeVisitor : public NodeVisitor< Int_IONode::visitable_type >, private frame_graph::Noncopyable {
         public:
-            void visit( Int_IONode &n ) {
+            void visit( Int_IONode::visitable_type &n ) {
                 visited.push_back( n.getLabel());
             }
 
@@ -96,7 +96,7 @@ SCENARIO( "With two connected nodes", "[nodes]" ) {
 
 SCENARIO( "With heterogenous nodes", "[nodes]" ) {
     class IntString_IONode
-            : public Node< Inlets< int, string >, Outlets< int, string > >, public VisitableNode< IntString_IONode > {
+            : public Node< Inlets< int, string >, Outlets< int, string > > {
     public:
         IntString_IONode( const string &label ) : Node< Inlets< int, string >, Outlets< int, string > >( label ) {
             in< 0 >().onReceive( [&]( const int &i ) {
@@ -208,15 +208,40 @@ SCENARIO( "With heterogenous nodes", "[nodes]" ) {
 
 
     GIVEN( "a visitor" ) {
-        class V : public NodeVisitor< Int_IONode, IntString_IONode > {
+        class V : public NodeVisitor< Int_IONode::visitable_type, IntString_IONode::visitable_type > {
         public:
 
-            void visit( Int_IONode &n ) {
+            void visit( Int_IONode::visitable_type &n ) {
                 visited.push_back( n.getLabel());
             }
 
-            void visit( IntString_IONode &n ) {
+            void visit( IntString_IONode::visitable_type &n ) {
                 visited.push_back( n.getLabel());
+            }
+
+            std::vector< std::string > visited;
+        };
+
+        V v;
+
+        THEN( "the hierarchy can be visited" ) {
+            n1.accept( v );
+
+            REQUIRE( v.visited.size() == 5 );
+            REQUIRE_THAT( v.visited[ 0 ], StartsWith( "node 1" ));
+            REQUIRE_THAT( v.visited[ 1 ], StartsWith( "node 2" ));
+            REQUIRE_THAT( v.visited[ 2 ], StartsWith( "node 3" ));
+            REQUIRE_THAT( v.visited[ 3 ], StartsWith( "node 4" ));
+            REQUIRE_THAT( v.visited[ 4 ], StartsWith( "node 4" ));
+        }
+    }
+
+    GIVEN( "a generic visitor using NodeBase" ) {
+        class V : public NodeVisitor< NodeBase > {
+        public:
+
+            void visit( NodeBase & n ) {
+                visited.push_back( n.getLabel() );
             }
 
             std::vector< std::string > visited;

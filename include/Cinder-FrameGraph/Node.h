@@ -1,9 +1,10 @@
 #pragma once
 
 #include <cstddef>
+#include <type_traits>
 #include <tuple>
 #include <array>
-#include <type_traits>
+#include <string>
 #include "Cinder-FrameGraph/NodeContainer.h"
 #include "Cinder-FrameGraph/Types.h"
 #include "cinder/Signals.h"
@@ -14,6 +15,22 @@
 namespace cinder {
 namespace frame_graph {
 
+
+//-----------------------------------------------------------------------------
+// Forward declarations
+
+template< typename out_t >
+class Outlet;
+template< typename in_t >
+class Inlet;
+
+class AnyNode;
+class NodeBase;
+
+//-----------------------------------------------------------------------------
+// Utility base classes
+
+//! makes it illegal to copy a derived class
 struct Noncopyable
 {
 protected:
@@ -26,6 +43,8 @@ protected:
     Noncopyable &operator=( const Noncopyable & ) = delete;
 };
 
+//! provides derived classes with automatically assigned, globally unique
+//! numeric identifiers
 class HasId
 {
 public:
@@ -38,13 +57,27 @@ protected:
     uint64_t mId;
 };
 
-template< typename out_t >
-class Outlet;
+//! Declares an interface for anything that acts like a node
+class NodeConcept
+{
+public:
+    virtual ~NodeConcept() = default;
 
-class AnyNode;
+
+    virtual uint64_t id() const = 0;
+
+    virtual void setLabel( const std::string &label ) = 0;
+    virtual std::string getLabel() const = 0;
+    virtual const std::string &label() const = 0;
+    virtual std::string &label() = 0;
+};
 
 
-class Visitable
+//-----------------------------------------------------------------------------
+// Visitors and Visitables
+
+
+class VisitableBase
 {
 public:
 };
@@ -75,15 +108,17 @@ public:
     virtual void visit( T & ) = 0;
 };
 
+//! Base class for custom visitors. T... is a list of node classes it can visit.
 template< class ... T >
 class NodeVisitor : public Visitor< T... >
 {
 public:
 };
 
-class AnyNode
+//! Makes it possible to pass and call methods upon nodes without knowing their types.
+class AnyNode : virtual public NodeConcept
 {
-    struct Concept
+    struct Concept : virtual public NodeConcept
     {
         virtual ~Concept() = default;
 
@@ -104,11 +139,24 @@ class AnyNode
 
         void acceptDispatch( VisitorBase * v ) override
         {
-            auto visitor = dynamic_cast< Visitor< T >* >( v );
-            if ( visitor ) {
-                node.accept( *visitor );
+            auto typedVisitor = dynamic_cast< Visitor< T >* >( v );
+            if ( typedVisitor ) {
+                node.accept( *typedVisitor );
+            } else {
+                auto genericVisitor = dynamic_cast< Visitor< NodeBase >* >( v );
+                if ( genericVisitor ) {
+                    node.accept( *genericVisitor );
+                }
             }
         }
+
+        uint64_t id() const override { return node.id(); }
+
+        void setLabel( const std::string &label ) override { return node.setLabel( label ); }
+        std::string getLabel() const override { return node.getLabel(); }
+        const std::string &label() const override { return node.label(); }
+        std::string &label() override { return node.label(); }
+
 
     private:
         T &node;
@@ -127,11 +175,19 @@ public:
     {
         mConcept->accept( visitor );
     }
+
+    uint64_t id() const override { return mConcept->id(); }
+
+    void setLabel( const std::string &label ) override { return mConcept->setLabel( label ); }
+    std::string getLabel() const override { return mConcept->getLabel(); }
+    const std::string &label() const override { return mConcept->label(); }
+    std::string &label() override { return mConcept->label(); }
 };
 
 
+//! Base class for nodes that can accept visitors. V is the class of the node itself.
 template< class V >
-class VisitableNode : public Visitable
+class VisitableNode : public VisitableBase
 {
     template< typename T >
     struct outlet_visitor
@@ -153,6 +209,8 @@ class VisitableNode : public Visitable
     };
 
 public:
+    typedef V visitable_type;
+
     VisitableNode()
     {
         auto &_this = static_cast< V & >( *this );
@@ -371,24 +429,33 @@ class UniformOutlets : public AbstractOutlets< std::array< Outlet< T >, I > >
 public:
 };
 
-//! A node has inlets and outlets, specified by its template arguments
-template< typename Ti, typename To >
-class Node : private Noncopyable, public HasId, public Ti, public To
+class NodeBase : private Noncopyable, public HasId, virtual public NodeConcept
 {
 public:
-    Node( const std::string &label )
+    NodeBase( const std::string &label )
     {
         setLabel( label );
     }
-    Node() : Node( "node" ) {}
+    NodeBase() : NodeBase( "node" ) {}
 
-    void setLabel( const std::string &label ) { mLabel = label + " (" + std::to_string( mId ) + ")"; }
-    std::string getLabel() const { return mLabel; }
-    const std::string &label() const { return mLabel; }
-    std::string &label() { return mLabel; }
+    uint64_t id() const override { return HasId::id(); }
+
+    void setLabel( const std::string &label ) override { mLabel = label + " (" + std::to_string( mId ) + ")"; }
+    std::string getLabel() const override { return mLabel; }
+    const std::string &label() const override { return mLabel; }
+    std::string &label() override { return mLabel; }
 
 private:
     std::string mLabel;
+};
+
+//! A node has inlets and outlets, specified by its template arguments
+template< typename Ti, typename To >
+class Node : public NodeBase, public Ti, public To, public VisitableNode< Node< Ti, To > >
+{
+public:
+    Node( const std::string &label ) : NodeBase( label ) {}
+    Node() : Node( "node" ) {}
 };
 
 namespace operators {
