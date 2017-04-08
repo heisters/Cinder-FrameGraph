@@ -28,10 +28,10 @@ SCENARIO( "With a single node", "[nodes]" ) {
     }
 
     THEN( "it has a label with getters and setters" ) {
-        REQUIRE_THAT( n.label(), StartsWith( "a label" ));
-        REQUIRE_THAT( n.getLabel(), StartsWith( "a label" ));
-        n.label() = "another label (0)";
-        REQUIRE_THAT( n.getLabel(), StartsWith( "another label" ));
+        REQUIRE( n.label() == "a label" );
+        REQUIRE( n.getLabel() == "a label" );
+        n.label() = "another label";
+        REQUIRE( n.getLabel() == "another label" );
     }
 }
 
@@ -84,12 +84,11 @@ SCENARIO( "With two connected nodes", "[nodes]" ) {
         Int_IONodeVisitor v;
 
         THEN( "the hierarchy can be visited" ) {
-//            v.visit( n1 );
             n1.accept( v );
 
             REQUIRE( v.visited.size() == 2 );
-            REQUIRE_THAT( v.visited[ 0 ], StartsWith( "label 1" ));
-            REQUIRE_THAT( v.visited[ 1 ], StartsWith( "label 2" ));
+            REQUIRE( v.visited[ 0 ] == "label 1" );
+            REQUIRE( v.visited[ 1 ] == "label 2" );
         }
     }
 }
@@ -228,11 +227,11 @@ SCENARIO( "With heterogenous nodes", "[nodes]" ) {
             n1.accept( v );
 
             REQUIRE( v.visited.size() == 5 );
-            REQUIRE_THAT( v.visited[ 0 ], StartsWith( "node 1" ));
-            REQUIRE_THAT( v.visited[ 1 ], StartsWith( "node 2" ));
-            REQUIRE_THAT( v.visited[ 2 ], StartsWith( "node 3" ));
-            REQUIRE_THAT( v.visited[ 3 ], StartsWith( "node 4" ));
-            REQUIRE_THAT( v.visited[ 4 ], StartsWith( "node 4" ));
+            REQUIRE( v.visited[ 0 ] == "node 1" );
+            REQUIRE( v.visited[ 1 ] == "node 2" );
+            REQUIRE( v.visited[ 2 ] == "node 3" );
+            REQUIRE( v.visited[ 3 ] == "node 4" );
+            REQUIRE( v.visited[ 4 ] == "node 4" );
         }
     }
 
@@ -253,11 +252,35 @@ SCENARIO( "With heterogenous nodes", "[nodes]" ) {
             n1.accept( v );
 
             REQUIRE( v.visited.size() == 5 );
-            REQUIRE_THAT( v.visited[ 0 ], StartsWith( "node 1" ));
-            REQUIRE_THAT( v.visited[ 1 ], StartsWith( "node 2" ));
-            REQUIRE_THAT( v.visited[ 2 ], StartsWith( "node 3" ));
-            REQUIRE_THAT( v.visited[ 3 ], StartsWith( "node 4" ));
-            REQUIRE_THAT( v.visited[ 4 ], StartsWith( "node 4" ));
+            REQUIRE( v.visited[ 0 ] == "node 1" );
+            REQUIRE( v.visited[ 1 ] == "node 2" );
+            REQUIRE( v.visited[ 2 ] == "node 3" );
+            REQUIRE( v.visited[ 3 ] == "node 4" );
+            REQUIRE( v.visited[ 4 ] == "node 4" );
+        }
+    }
+
+    GIVEN( "a connection-aware visitor" ) {
+        class V : public NodeVisitor< NodeBase > {//, ConnectionVisitor< OutletBase, InletBase > {
+        public:
+
+            void visit( NodeBase & n ) {
+                ss << "[" << n.getLabel() << "] ";
+            }
+
+            void visit( OutletBase & o, InletBase & i ) {
+                ss << o.node()->getLabel() << " (" << o.index() << ") -> " << i.node()->getLabel() << " (" << i.index() << "), ";
+            };
+
+            std::stringstream ss;
+        };
+
+        V v;
+
+        THEN( "the hierarchy can be visited" ) {
+            n1.accept( v );
+
+            REQUIRE( v.ss.str() == "[node 1] node 1 (0) -> node 2 (0), [node 2] node 2 (0) -> node 3 (0), [node 3] node 3 (1) -> node 4 (1), [node 4] node 1 (0) -> node 4 (0), [node 4] " );
         }
     }
 }

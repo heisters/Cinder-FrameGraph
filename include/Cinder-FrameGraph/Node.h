@@ -26,6 +26,8 @@ class Inlet;
 
 class AnyNode;
 class NodeBase;
+class OutletBase;
+class InletBase;
 
 //-----------------------------------------------------------------------------
 // Utility base classes
@@ -70,6 +72,9 @@ public:
     virtual std::string getLabel() const = 0;
     virtual const std::string &label() const = 0;
     virtual std::string &label() = 0;
+
+    virtual std::size_t num_inlets() const = 0;
+    virtual std::size_t num_outlets() const = 0;
 };
 
 
@@ -96,6 +101,7 @@ class Visitor< T > : virtual public VisitorBase
 {
 public:
     virtual void visit( T & ) = 0;
+    virtual void visit( OutletBase &, InletBase & ) {}
 };
 
 template< typename T, typename... Ts >
@@ -108,12 +114,20 @@ public:
     virtual void visit( T & ) = 0;
 };
 
-//! Base class for custom visitors. T... is a list of node classes it can visit.
+//! Base class for custom node visitors. T... is a list of node classes it can visit.
 template< class ... T >
 class NodeVisitor : public Visitor< T... >
 {
 public:
 };
+
+////! Base class for custom connection visitors.
+//template< class To, class Ti >
+//class ConnectionVisitor
+//{
+//public:
+//    virtual void visit( To &, Ti & ) = 0;
+//};
 
 //! Makes it possible to pass and call methods upon nodes without knowing their types.
 class AnyNode : virtual public NodeConcept
@@ -156,7 +170,8 @@ class AnyNode : virtual public NodeConcept
         std::string getLabel() const override { return node.getLabel(); }
         const std::string &label() const override { return node.label(); }
         std::string &label() override { return node.label(); }
-
+        std::size_t num_inlets() const override { return node.num_inlets(); };
+        std::size_t num_outlets() const override { return node.num_outlets(); };
 
     private:
         T &node;
@@ -182,6 +197,8 @@ public:
     std::string getLabel() const override { return mConcept->getLabel(); }
     const std::string &label() const override { return mConcept->label(); }
     std::string &label() override { return mConcept->label(); }
+    std::size_t num_inlets() const override { return mConcept->num_inlets(); };
+    std::size_t num_outlets() const override { return mConcept->num_outlets(); };
 };
 
 
@@ -195,11 +212,25 @@ class VisitableNode : public VisitableBase
         T &visitor;
         outlet_visitor( T &v ) : visitor( v ) {}
 
+        template< typename To, typename Ti >
+        void visitConnection( To & o, Ti & i, long )
+        {
+        };
+
+        template< typename To, typename Ti >
+        auto visitConnection( To & o, Ti & i, int )
+                -> decltype( visitor.visit( o, i ), void() )
+        {
+            visitor.visit( o, i );
+        };
+
 
         template< typename To >
         void operator()( Outlet< To > &outlet )
         {
-            for ( auto &inlet : outlet.connections()) {
+            for ( auto &inlet : outlet.connections() ) {
+                visitConnection( outlet, inlet.get(), 0 );
+
                 auto n = inlet.get().node();
                 if ( n != nullptr ) {
                     n->accept( visitor );
@@ -214,6 +245,11 @@ public:
     VisitableNode()
     {
         auto &_this = static_cast< V & >( *this );
+
+        _this.each_out( [&]( auto &o ) {
+            o.setNode( _this );
+        } );
+
         _this.each_in( [&]( auto &i ) {
             i.setNode( _this );
         } );
@@ -231,34 +267,52 @@ public:
     }
 };
 
+//-----------------------------------------------------------------------------
+// Inlets and Outlets
+
+
 //! Abstract base class for all inlets.
 class Xlet : private Noncopyable, public HasId
 {
 public:
     bool operator<( const Xlet &b ) { return mId < b.mId; }
     bool operator==( const Xlet &b ) { return mId == b.mId; }
-private:
+
+    const AnyNode *node() const { return mNode; }
+    AnyNode *node() { return mNode; }
+
+    std::size_t getIndex() const { return mIndex; }
+    const std::size_t & index() const { return mIndex; }
+
+protected:
+    template< typename T >
+    void setNode( T &node ) { mNode = new AnyNode( node ); }
+
+    void setIndex( std::size_t i ) { mIndex = i; }
+
+    template< typename Ti, typename To >
+    friend class Node;
+    template< typename V >
+    friend class VisitableNode;
+
+
+    AnyNode *mNode = nullptr;
+    std::size_t mIndex = 0;
 };
 
 
-class AbstractInlet : public Xlet
+class InletBase : public Xlet
 {
-public:
+};
 
-    template< typename T >
-    void setNode( T &node ) { mNode = new AnyNode( node ); }
-    AnyNode *node() { return mNode; }
-    const AnyNode *node() const { return mNode; }
-
-
-protected:
-    AnyNode *mNode = nullptr;
+class OutletBase : public Xlet
+{
 };
 
 //! An Inlet accepts \a in_data_ts to its receive method, and returns
 //! \a read_t from its read method.
 template< typename in_t >
-class Inlet : public AbstractInlet
+class Inlet : public InletBase
 {
 public:
     typedef in_t type;
@@ -288,15 +342,11 @@ private:
     connection_container< outlet_type > mConnections;
 };
 
-class AbstractOutlet : public Xlet
-{
-
-};
 
 //! An Outlet connects to an \a out_data_ts Inlet, and is updated with
 //! \a update_t.
 template< typename out_t >
-class Outlet : public AbstractOutlet
+class Outlet : public OutletBase
 {
 public:
     typedef out_t type;
@@ -365,6 +415,8 @@ public:
 
     inline const inlets_container_type &inlets() const { return mInlets; }
 
+    inline std::size_t num_inlets() const { return in_size; }
+
 protected:
     inlets_container_type mInlets;
 };
@@ -394,6 +446,8 @@ public:
     inline outlets_container_type &outlets() { return mOutlets; }
 
     inline const outlets_container_type &outlets() const { return mOutlets; }
+
+    inline std::size_t num_outlets() const { return out_size; }
 
 protected:
     outlets_container_type mOutlets;
@@ -432,15 +486,18 @@ public:
 class NodeBase : private Noncopyable, public HasId, virtual public NodeConcept
 {
 public:
-    NodeBase( const std::string &label )
+    NodeBase( const std::string &label = "" )
     {
-        setLabel( label );
+        if ( label == "" ) {
+            setLabel( "node " + std::to_string( mId ) );
+        } else {
+            setLabel( label );
+        }
     }
-    NodeBase() : NodeBase( "node" ) {}
 
     uint64_t id() const override { return HasId::id(); }
 
-    void setLabel( const std::string &label ) override { mLabel = label + " (" + std::to_string( mId ) + ")"; }
+    void setLabel( const std::string &label ) override { mLabel = label; }
     std::string getLabel() const override { return mLabel; }
     const std::string &label() const override { return mLabel; }
     std::string &label() override { return mLabel; }
@@ -454,8 +511,21 @@ template< typename Ti, typename To >
 class Node : public NodeBase, public Ti, public To, public VisitableNode< Node< Ti, To > >
 {
 public:
-    Node( const std::string &label ) : NodeBase( label ) {}
-    Node() : Node( "node" ) {}
+    Node( const std::string &label = "" ) : NodeBase( label )
+    {
+        size_t i = 0;
+        each_in( [&]( auto & in ) {
+            in.setIndex( i++ );
+        } );
+        i = 0;
+
+        each_out( [&]( auto & out ) {
+            out.setIndex( i++ );
+        } );
+    }
+
+    std::size_t num_inlets() const override { return Ti::num_inlets(); };
+    std::size_t num_outlets() const override { return To::num_outlets(); };
 };
 
 namespace operators {
