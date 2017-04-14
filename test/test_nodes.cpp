@@ -35,6 +35,29 @@ SCENARIO( "With a single node", "[nodes]" ) {
     }
 }
 
+SCENARIO( "With an AnyNode", "[nodes]" ) {
+    Int_IONode concrete( "node 1" );
+    AnyNode any( (Int_IONode::visitable_type &)concrete );
+
+    THEN( "it has the same interface" ) {
+        REQUIRE( any.id() == concrete.id() );
+        REQUIRE( any.getLabel() == "node 1" );
+    }
+
+    THEN( "it maintains a reference to the original node" ) {
+        any.setLabel( "something else" );
+        REQUIRE( concrete.label() == "something else" );
+    }
+
+    THEN( "it is easily convertable to a NodeBase" ) {
+        NodeBase & base = any;
+
+        REQUIRE( base.label() == "node 1" );
+        base.setLabel( "another something else" );
+        REQUIRE( concrete.label() == "another something else" );
+    }
+}
+
 SCENARIO( "With two connected nodes", "[nodes]" ) {
     Int_IONode n1( "label 1" );
     Int_IONode n2( "label 2" );
@@ -261,7 +284,7 @@ SCENARIO( "With heterogenous nodes", "[nodes]" ) {
     }
 
     GIVEN( "a connection-aware visitor" ) {
-        class V : public NodeVisitor< NodeBase > {//, ConnectionVisitor< OutletBase, InletBase > {
+        class V : public NodeVisitor< NodeBase > {
         public:
 
             void visit( NodeBase & n ) {

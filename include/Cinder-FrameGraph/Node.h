@@ -136,6 +136,9 @@ class AnyNode : virtual public NodeConcept
     {
         virtual ~Concept() = default;
 
+        virtual NodeBase& get() = 0;
+        virtual const NodeBase& get() const = 0;
+
         template< typename V >
         void accept( V & visitor )
         {
@@ -149,6 +152,9 @@ class AnyNode : virtual public NodeConcept
     struct Model : public Concept
     {
         Model( T &n ) : node( n ) {}
+
+        NodeBase& get() override { return node; }
+        const NodeBase& get() const override { return node; }
 
 
         void acceptDispatch( VisitorBase * v ) override
@@ -183,6 +189,9 @@ public:
     template< typename T >
     AnyNode( T &node ) :
             mConcept( new Model< T >( node )) {}
+
+    operator NodeBase& () { return mConcept->get(); }
+    operator const NodeBase& () const { return mConcept->get(); }
 
 
     template< typename V >
