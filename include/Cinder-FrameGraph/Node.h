@@ -114,23 +114,7 @@ public:
     virtual void visit( T & ) = 0;
 };
 
-//! Base class for custom node visitors. T... is a list of node classes it can visit.
-template< class ... T >
-class NodeVisitor : public Visitor< T... >
-{
-public:
-};
-
-////! Base class for custom connection visitors.
-//template< class To, class Ti >
-//class ConnectionVisitor
-//{
-//public:
-//    virtual void visit( To &, Ti & ) = 0;
-//};
-
-//! Makes it possible to pass and call methods upon nodes without knowing their types.
-class AnyNode : virtual public NodeConcept
+class AnyNode
 {
     struct Concept : virtual public NodeConcept
     {
@@ -209,6 +193,20 @@ public:
     std::size_t num_inlets() const override { return mConcept->num_inlets(); };
     std::size_t num_outlets() const override { return mConcept->num_outlets(); };
 };
+
+template< class ... T >
+class NodeVisitor : public Visitor< T... >
+{
+public:
+
+
+    bool tryVisit( AnyNode & node )
+    {
+        return node.tryAccept< NodeVisitor< T... >, T... >( *this );
+    }
+};
+
+
 
 
 //! Base class for nodes that can accept visitors. V is the class of the node itself.
@@ -419,6 +417,10 @@ public:
     void each_in( F &fn ) { return algorithms::call( mInlets, fn ); }
     template< typename F >
     void each_in_with_index( F &fn ) { return algorithms::call_with_index( mInlets, fn ); }
+    template< typename F >
+    void each_in( F &&fn ) { return algorithms::call( mInlets, fn ); }
+    template< typename F >
+    void each_in_with_index( F &&fn ) { return algorithms::call_with_index( mInlets, fn ); }
 
     inline inlets_container_type &inlets() { return mInlets; }
 
@@ -451,6 +453,10 @@ public:
     void each_out( F &fn ) { return algorithms::call( mOutlets, fn ); }
     template< typename F >
     void each_out_with_index( F &fn ) { return algorithms::call_with_index( mOutlets, fn ); }
+    template< typename F >
+    void each_out( F &&fn ) { return algorithms::call( mOutlets, fn ); }
+    template< typename F >
+    void each_out_with_index( F &&fn ) { return algorithms::call_with_index( mOutlets, fn ); }
 
     inline outlets_container_type &outlets() { return mOutlets; }
 
@@ -578,7 +584,7 @@ template<
 inline No &operator>>( Ni &input, No &output )
 {
     static_assert( std::is_same< Ti, To >::value, "Cannot connect input to output" );
-    input.out< Ii >() >> output.in< Io >();
+    input.template out< Ii >() >> output.template in< Io >();
     return output;
 }
 
