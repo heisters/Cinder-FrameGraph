@@ -6,10 +6,13 @@
 #include "cinder/gl/GlslProg.h"
 #include "cinder/gl/Batch.h"
 #include "cinder/Signals.h"
-#include "Cinder-FrameGraph/Node.h"
+#include "libnodes/Node.h"
+#include "Cinder-FrameGraph/Types.h"
 
 namespace cinder{
 namespace frame_graph {
+
+using namespace nodes;
 
 //! A node that inputs a Cinder Surface32f.
 class SurfaceINode : public Node< Inlets<>, Outlets< Surface32fRef > >

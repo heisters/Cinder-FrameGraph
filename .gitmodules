@@ -1,3 +1,6 @@
 [submodule "lib/OpenColorIO"]
 	path = lib/OpenColorIO
 	url = git@github.com:imageworks/OpenColorIO.git
+[submodule "lib/libnodes"]
+	path = lib/libnodes
+	url = git@github.com:heisters/libnodes.git

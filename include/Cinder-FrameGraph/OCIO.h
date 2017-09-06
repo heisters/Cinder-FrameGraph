@@ -4,7 +4,7 @@
 #include "cinder/gl/Fbo.h"
 
 #include "Cinder-FrameGraph.h"
-#include "Cinder-FrameGraph/NodeContainer.h"
+#include "libnodes/NodeContainer.h"
 #include "Cinder-FrameGraph/Types.h"
 
 namespace cinder {
