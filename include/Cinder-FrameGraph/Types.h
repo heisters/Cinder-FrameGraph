@@ -17,7 +17,11 @@ typedef ref< class ImageIONode >		ImageIONodeRef;
 typedef ref< class SurfaceINode >		SurfaceINodeRef;
 typedef ref< class TextureINode >		TextureINodeRef;
 typedef ref< class TextureONode >		TextureONodeRef;
-typedef ref< class TextureShaderIONode > TextureShaderIONodeRef;
+template< std::size_t I >
+class TextureShaderIONode;
+template< std::size_t I >
+using TextureShaderIONodeRef = ref< TextureShaderIONode< I > >;
+
 
 namespace ocio {
 	typedef ref< class ProcessIONode >		ProcessIONodeRef;

@@ -33,6 +33,7 @@
 
 ## Build generated
 build/
+cmake-build-*/
 DerivedData/
 
 ## Various settings
