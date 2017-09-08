@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Cinder-FrameGraph.h"
+#include "Cinder-FrameGraph.hpp"
 
 namespace cinder {
 namespace frame_graph {

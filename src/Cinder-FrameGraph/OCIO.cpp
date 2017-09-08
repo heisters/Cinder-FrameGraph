@@ -1,4 +1,4 @@
-#include "Cinder-FrameGraph/OCIO.h"
+#include "Cinder-FrameGraph/OCIO.hpp"
 #include "cinder/Log.h"
 
 using namespace ci;

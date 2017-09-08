@@ -3,7 +3,7 @@
 #include "cinder/gl/gl.h"
 #include "cinder/Rect.h"
 
-#include "Cinder-FrameGraph.h"
+#include "Cinder-FrameGraph.hpp"
 #include "Cinder-FrameGraph/LUTShaderIONode.hpp"
 
 using namespace ci;

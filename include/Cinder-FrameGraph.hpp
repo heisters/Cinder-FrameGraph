@@ -2,14 +2,10 @@
 
 #include "cinder/Surface.h"
 #include "cinder/gl/Texture.h"
-#include "cinder/gl/Fbo.h"
-#include "cinder/gl/GlslProg.h"
-#include "cinder/gl/Batch.h"
-#include "cinder/GeomIo.h"
-#include "cinder/gl/gl.h"
 #include "cinder/Signals.h"
 #include "libnodes/Node.h"
-#include "Cinder-FrameGraph/Types.h"
+#include "Cinder-FrameGraph/Types.hpp"
+#include "Cinder-FrameGraph/FullScreenQuadRenderer.hpp"
 
 namespace cinder{
 namespace frame_graph {
@@ -91,7 +87,9 @@ private:
 
 //! A node that applies a shader to a texture input.
 template< std::size_t I = 1 >
-class TextureShaderIONode : public Node< UniformInlets< gl::Texture2dRef, I >, Outlets< gl::Texture2dRef > >
+class TextureShaderIONode :
+        public Node< UniformInlets< gl::Texture2dRef, I >, Outlets< gl::Texture2dRef > >,
+        public FullScreenQuadRenderer< I >
 {
 public:
     static TextureShaderIONodeRef< I > create( const ci::gl::GlslProgRef & shader, const ci::ivec2 & size )
@@ -99,86 +97,31 @@ public:
         return std::make_shared< TextureShaderIONode >( shader, size );
     }
     TextureShaderIONode( const ci::gl::GlslProgRef & shader, const ci::ivec2 & size ) :
-            mBatch( ci::gl::Batch::create( ci::geom::Rect() >> ci::geom::Translate( 0.5f, 0.5f ), shader ) )
+        FullScreenQuadRenderer< I >( shader, size )
     {
         using namespace ci;
-
-        resize( size );
-        mTextures.fill( nullptr );
-        for ( size_t i = 0; i < mTextureNames.size(); ++i ) {
-            mTextureNames[i] = "uTexture" + std::to_string( i );
-        }
 
         this->each_in_with_index( [&]( auto & inlet, size_t i ) {
             inlet.onReceive( [&, i]( const gl::Texture2dRef & tex ) {
                 update( i, tex );
             } );
         } );
-    }
 
-
-    virtual void resize( const ci::ivec2 & size )
-    {
-        using namespace ci;
-        mFbo = gl::Fbo::create( size.x, size.y );
-        mModelMatrix = scale( vec3( mFbo->getSize(), 1.f ) );
-    }
-
-    void setTextureName( std::size_t i, const std::string & name )
-    {
-        mTextureNames[ i ] = name;
     }
 
     virtual void update( std::size_t i, const ci::gl::Texture2dRef & texture )
     {
-        mTextures[ i ] = texture;
+        this->setTexture( i, texture );
         if ( i == ( TextureShaderIONode< I >::in_size - 1 ) ) update();
     }
 
     virtual void update()
     {
-        using namespace ci;
-
-        if ( ! mFbo ) return;
-
-        {
-            gl::ScopedFramebuffer	scp_fbo( mFbo );
-            gl::ScopedViewport		scp_viewport( mFbo->getSize() );
-            gl::ScopedMatrices		scp_mtx;
-            gl::ScopedColor         scp_color( ColorAf( 1.f, 1.f, 1.f, 1.f ) );
-
-            for ( uint8_t i = 0; i < mTextures.size(); ++i ) {
-                mTextures.at( i )->bind( i );
-                mBatch->getGlslProg()->uniform( mTextureNames.at( i ), i );
-            }
-
-
-            gl::setMatricesWindow( mFbo->getSize() );
-            gl::multModelMatrix( mModelMatrix );
-
-            mBatch->getGlslProg()->uniform( "uSize", vec2( mFbo->getSize() ) );
-
-            gl::clear();
-
-            mBatch->draw();
-
-            for ( uint8_t i = 0; i < mTextures.size(); ++i ) {
-                mTextures.at( i )->unbind();
-            }
-        }
-
-        auto tex = mFbo->getColorTexture();
-        tex->setTopDown( true );
-
-        this->template out< 0 >().update( tex );
+        this->render();
+        this->template out< 0 >().update( this->getTexture() );
     }
 
 private:
-    std::array< gl::Texture2dRef, I > mTextures;
-    std::array< std::string, I > mTextureNames;
-    ci::gl::BatchRef mBatch;
-    ci::gl::FboRef mFbo = nullptr;
-    ci::mat4 mModelMatrix;
 };
 
 

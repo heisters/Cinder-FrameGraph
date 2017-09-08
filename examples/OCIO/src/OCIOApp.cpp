@@ -5,9 +5,9 @@
 #include "cinder/Log.h"
 #include "cinder/params/Params.h"
 
-#include "Cinder-FrameGraph.h"
-#include "Cinder-FrameGraph/QuickTime.h"
-#include "Cinder-FrameGraph/OCIO.h"
+#include "Cinder-FrameGraph.hpp"
+#include "Cinder-FrameGraph/QuickTime.hpp"
+#include "Cinder-FrameGraph/OCIO.hpp"
 
 #include "CubeONode.h"
 

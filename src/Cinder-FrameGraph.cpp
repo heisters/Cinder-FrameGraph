@@ -1,4 +1,4 @@
-#include "Cinder-FrameGraph.h"
+#include "Cinder-FrameGraph.hpp"
 #include <algorithm>
 #include "cinder/Log.h"
 

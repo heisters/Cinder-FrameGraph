@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Cinder-FrameGraph.h"
+#include "Cinder-FrameGraph.hpp"
 
 typedef ci::frame_graph::ref< class CubeONode > CubeONodeRef;
 
