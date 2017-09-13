@@ -55,11 +55,17 @@ protected:
         mTextures[ i ] = texture;
     }
 
-    virtual void render()
+    template< typename T >
+    void setUniform( const std::string & name, const T & v )
+    {
+        mBatch->getGlslProg()->uniform( name, v );
+    }
+
+    virtual ci::gl::Texture2dRef render()
     {
         using namespace ci;
 
-        if ( ! mFbo ) return;
+        if ( ! mFbo ) return nullptr;
 
         {
             gl::ScopedFramebuffer	scp_fbo( mFbo );
@@ -87,7 +93,9 @@ protected:
             }
         }
 
-        mFbo->getColorTexture()->setTopDown( true );
+        auto tex = mFbo->getColorTexture();
+        tex->setTopDown( true );
+        return tex;
     }
 
     ci::gl::Texture2dRef getTexture() { return mFbo->getColorTexture(); }

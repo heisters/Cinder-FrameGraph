@@ -117,8 +117,7 @@ public:
 
     virtual void update()
     {
-        this->render();
-        this->template out< 0 >().update( this->getTexture() );
+        this->template out< 0 >().update( this->render() );
     }
 
 private:
