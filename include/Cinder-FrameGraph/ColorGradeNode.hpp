@@ -5,13 +5,18 @@
 namespace cinder {
 namespace frame_graph {
 
-class ColorGradeShaderIONode :
+//! A node that provides basic real-time color grading.
+//! Inlets except temperature expect values in the range of roughly -2 to +2.
+//! 0 means no change, > 0 is more of the effect, and < 0 is less of the effect.
+//! Temperature takes degrees Kelvin, and is designed to be used with values
+//! between 1000K and 40,000K.
+class ColorGradeNode :
         public FullScreenQuadRenderer< 1 >,
         public Node< Inlets<
                 gl::Texture2dRef,
                 float, // exposure
                 vec3,  // lift, gamma, gain
-                int,   // temperature (Kelvin)
+                float, // temperature (Kelvin)
                 float, // contrast
                 float, // midtone_contrast
                 vec3   // hue, saturation, value
@@ -30,7 +35,7 @@ public:
     };
 
 
-    ColorGradeShaderIONode( const ci::ivec2 & size );
+    explicit ColorGradeNode( const ci::ivec2 & size );
 
 };
 

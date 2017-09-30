@@ -1,16 +1,16 @@
-#include "Cinder-FrameGraph/ColorGradeShaderIONode.hpp"
+#include "Cinder-FrameGraph/ColorGradeNode.hpp"
 
 using namespace ci;
 using namespace frame_graph;
 using namespace std;
 
-static const std::map< ColorGradeShaderIONode::inlet_names, std::string > INLET_NAME_STRINGS{
-        {ColorGradeShaderIONode::exposure,          "Exposure"},
-        {ColorGradeShaderIONode::LGG,               "LGG"},
-        {ColorGradeShaderIONode::temperature,       "Temperature"},
-        {ColorGradeShaderIONode::contrast,          "Contrast"},
-        {ColorGradeShaderIONode::midtone_contrast,  "MidtoneContrast"},
-        {ColorGradeShaderIONode::HSV,               "HSV"}
+static const std::map< ColorGradeNode::inlet_names, std::string > INLET_NAME_STRINGS{
+        {ColorGradeNode::exposure,          "Exposure"},
+        {ColorGradeNode::LGG,               "LGG"},
+        {ColorGradeNode::temperature,       "Temperature"},
+        {ColorGradeNode::contrast,          "Contrast"},
+        {ColorGradeNode::midtone_contrast,  "MidtoneContrast"},
+        {ColorGradeNode::HSV,               "HSV"}
 };
 
 
@@ -127,7 +127,10 @@ vec3 kelvin2rgb( in float K )
 
 vec3 liftGammaGain( in vec3 c_in, in vec3 lgg )
 {
-    return pow( ( c_in + lgg.x * ( 1. - c_in ) ) * lgg.z, vec3( 1. / lgg.y ) );
+    float lift = lgg.x;
+    float gamma = lgg.y + 1.;
+    float gain = lgg.z + 1.;
+    return pow( ( c_in + lift * ( 1. - c_in ) ) * gain, vec3( 1. / gamma ) );
 }
 
 vec3 exposure( in vec3 c_in, in float x )
@@ -137,7 +140,8 @@ vec3 exposure( in vec3 c_in, in float x )
 
 vec3 contrast( in vec3 c_in, in float x )
 {
-    return ( c_in - .5 ) * x + .5;
+    float denorm = x + 1.;
+    return ( c_in - .5 ) * denorm + .5;
 }
 
 vec3 hsv( in vec3 c_in, in vec3 x )
@@ -148,7 +152,7 @@ vec3 hsv( in vec3 c_in, in vec3 x )
 // like "clarity", not the same
 vec3 midToneContrast( in vec3 c_in, in float x )
 {
-    return mix( c_in, curve( c_in, vec2( .05, 1. ), vec2( .95, 0. ) ), x );
+    return mix( c_in, curve( c_in, vec2( .05, 1. ), vec2( .95, 0. ) ), -x );
 }
 
 vec3 temperature( in vec3 c_in, in float K )
@@ -182,7 +186,7 @@ void main() {
 )EOF";
 
 
-ColorGradeShaderIONode::ColorGradeShaderIONode( const ci::ivec2 & size ) :
+ColorGradeNode::ColorGradeNode( const ci::ivec2 & size ) :
         FullScreenQuadRenderer< 1 >( gl::GlslProg::create( gl::GlslProg::Format()
                                                                    .fragment( FRAG )
                                                                    .vertex( VERT )
@@ -195,7 +199,7 @@ ColorGradeShaderIONode::ColorGradeShaderIONode( const ci::ivec2 & size ) :
         out< 0 >().update( render() );
     } );
 
-    each_in_with_index( [&]( auto & inlet, size_t i ) {
+    inlets()[ from< first_inlet >{} ].each_with_index( [&]( auto & inlet, size_t i ) {
         string n = INLET_NAME_STRINGS.at( (inlet_names)i );
         setUniform( "uEnable" + n, false );
 
@@ -203,5 +207,5 @@ ColorGradeShaderIONode::ColorGradeShaderIONode( const ci::ivec2 & size ) :
             setUniform( "uEnable" + n, true );
             setUniform( "u" + n, v );
         });
-    }, index_constant< (size_t)first_inlet >{} );
+    } );
 }

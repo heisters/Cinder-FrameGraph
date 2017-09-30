@@ -101,7 +101,7 @@ public:
     {
         using namespace ci;
 
-        this->each_in_with_index( [&]( auto & inlet, size_t i ) {
+        this->inlets().each_with_index( [&]( auto & inlet, size_t i ) {
             inlet.onReceive( [&, i]( const gl::Texture2dRef & tex ) {
                 update( i, tex );
             } );

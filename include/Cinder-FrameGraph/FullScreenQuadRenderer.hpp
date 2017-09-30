@@ -73,16 +73,33 @@ protected:
             gl::ScopedMatrices		scp_mtx;
             gl::ScopedColor         scp_color( ColorAf( 1.f, 1.f, 1.f, 1.f ) );
 
+            gl::setMatricesWindow( mFbo->getSize() );
+            gl::multModelMatrix( mModelMatrix );
+            auto shader = mBatch->getGlslProg();
+
             for ( uint8_t i = 0; i < mTextures.size(); ++i ) {
-                mTextures.at( i )->bind( i );
-                mBatch->getGlslProg()->uniform( mTextureNames.at( i ), i );
+                auto tex = mTextures.at( i );
+                auto name = mTextureNames.at( i );
+
+                tex->bind( i );
+
+                shader->uniform( name, i );
+                auto uniformName = name + "Mtx";
+
+                if ( shader->findUniform( uniformName, nullptr ) != nullptr ) {
+                    mat4 m;
+                    if ( !tex->isTopDown()) {
+                        m = translate( vec3( 0.f, 1.f, 0.f )) *
+                            scale( vec3( 1.f, -1.f, 1.f ));
+                    }
+                    shader->uniform( uniformName, m );
+                }
             }
 
 
-            gl::setMatricesWindow( mFbo->getSize() );
-            gl::multModelMatrix( mModelMatrix );
-
-            mBatch->getGlslProg()->uniform( "uSize", vec2( mFbo->getSize() ) );
+            if ( shader->findUniform( "uSize", nullptr ) != nullptr ) {
+                shader->uniform( "uSize", vec2( mFbo->getSize()));
+            }
 
             gl::clear();
 

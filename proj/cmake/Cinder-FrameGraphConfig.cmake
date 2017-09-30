@@ -6,13 +6,14 @@ if( NOT TARGET Cinder-FrameGraph )
 		list( APPEND SOURCES
                 ${FrameGraph_INCLUDE_PATH}/Cinder-FrameGraph.hpp
                 ${FrameGraph_INCLUDE_PATH}/Cinder-FrameGraph/Types.hpp
-                ${FrameGraph_INCLUDE_PATH}/Cinder-FrameGraph/ColorGradeShaderIONode.hpp
-                ${FrameGraph_INCLUDE_PATH}/Cinder-FrameGraph/LUTShaderIONode.hpp
+                ${FrameGraph_INCLUDE_PATH}/Cinder-FrameGraph/ColorGradeNode.hpp
+                ${FrameGraph_INCLUDE_PATH}/Cinder-FrameGraph/LUTNode.hpp
                 ${FrameGraph_INCLUDE_PATH}/Cinder-FrameGraph/FullScreenQuadRenderer.hpp
+                ${FrameGraph_INCLUDE_PATH}/Cinder-FrameGraph/VecNode.hpp
 				${FrameGraph_SOURCE_PATH}/Cinder-FrameGraph.cpp
                 ${FrameGraph_SOURCE_PATH}/libnodes/Node.cpp
-                ${FrameGraph_SOURCE_PATH}/Cinder-FrameGraph/LUTShaderIONode.cpp
-                ${FrameGraph_SOURCE_PATH}/Cinder-FrameGraph/ColorGradeShaderIONode.cpp
+                ${FrameGraph_SOURCE_PATH}/Cinder-FrameGraph/LUTNode.cpp
+                ${FrameGraph_SOURCE_PATH}/Cinder-FrameGraph/ColorGradeNode.cpp
 		)
 
     add_library( Cinder-FrameGraph ${SOURCES} )

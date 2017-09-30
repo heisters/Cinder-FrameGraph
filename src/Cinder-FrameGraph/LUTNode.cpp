@@ -1,4 +1,4 @@
-#include "Cinder-FrameGraph/LUTShaderIONode.hpp"
+#include "Cinder-FrameGraph/LUTNode.hpp"
 
 using namespace std;
 using namespace cinder;
@@ -6,14 +6,15 @@ using namespace frame_graph;
 
 static const string VERT = R"EOF(
 uniform mat4	ciModelViewProjection;
+uniform mat4    uTexSrcMtx;
 in vec4			ciPosition;
 in vec2			ciTexCoord0;
 out vec2		uv;
 
 void main( void ) {
     gl_Position	= ciModelViewProjection * ciPosition;
-    uv = ciTexCoord0;
-    uv.y = 1. - uv.y;
+    vec4 texCoord = uTexSrcMtx * vec4( ciTexCoord0, 0., 1. );
+    uv = texCoord.st / texCoord.q;
 }
 )EOF";
 
@@ -23,13 +24,13 @@ void main( void ) {
 static const string FRAG = R"EOF(
 #version 150
 
-uniform sampler2D uTexSrc;
-uniform sampler2D uTexLUT;
+uniform sampler2D   uTexSrc;
+uniform sampler2D   uTexLUT;
 
 in vec2 uv;
 out vec4 oColor;
 
-vec4 lookup(in vec4 textureColor, in sampler2D lookupTable) {
+vec4 lookup( in vec4 textureColor, in sampler2D lookupTable ) {
 #ifndef LUT_NO_CLAMP
     textureColor = clamp(textureColor, 0.0, 1.0);
 #endif
@@ -74,7 +75,7 @@ void main() {
 }
 )EOF";
 
-LUTShaderIONode::LUTShaderIONode( const ivec2 & size ) :
+LUTNode::LUTNode( const ivec2 & size ) :
 TextureShaderIONode( gl::GlslProg::create( gl::GlslProg::Format()
                                            .fragment( FRAG )
                                            .vertex( VERT )

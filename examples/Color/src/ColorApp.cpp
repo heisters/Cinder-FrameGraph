@@ -2,9 +2,12 @@
 #include "cinder/app/RendererGl.h"
 #include "cinder/gl/gl.h"
 #include "cinder/Rect.h"
+#include "cinder/params/Params.h"
 
 #include "Cinder-FrameGraph.hpp"
-#include "Cinder-FrameGraph/LUTShaderIONode.hpp"
+#include "Cinder-FrameGraph/LUTNode.hpp"
+#include "Cinder-FrameGraph/ColorGradeNode.hpp"
+#include "Cinder-FrameGraph/VecNode.hpp"
 
 using namespace ci;
 using namespace ci::app;
@@ -17,7 +20,7 @@ public:
 
     ColorApp();
 
-    void setup() override {};
+    void setup() override;
     void resize() override;
     void mouseDrag( MouseEvent event ) override;
     void mouseDown( MouseEvent event ) override;
@@ -27,27 +30,47 @@ public:
 private:
 
     TextureINode                mSrcImage, mLUTImage;
-    TextureONode                mRawOut, mProcessedOut;
-    LUTShaderIONode             mLUT;
+    TextureONode                mOut, mLUTOut;
+    LUTNode                     mLUT;
+    ColorGradeNode              mGrader;
 
     int							mSplitX;
 
+    params::InterfaceGlRef	    mParams;
+
+    struct grade {
+        nodes::ValueNodef exposure{ 0.f };
+        Vec3Node<> lgg{ vec3( 0.f, 0.f, 0.f ) };
+        nodes::ValueNodef temperature{ 6500.f };
+        nodes::ValueNodef contrast{ 0.f };
+        nodes::ValueNodef midtone_contrast{ 0.f };
+        Vec3Node<> hsv{ vec3( 0.f, 0.f, 0.f ) };
+    };
+    grade                       mGrade;
 };
 
 ColorApp::ColorApp() :
     mSrcImage( loadImage( getOpenFilePath() ) ),
     mLUTImage( loadImage( getAssetPath( "luts/K_TONE_Kodachrome.png" ) ) ),
-    mLUT( getWindowSize() )
+    mLUT( getWindowSize() ),
+    mGrader( getWindowSize() )
 {
     /***************************************************************************
      * Create node graph
      */
 
 
-    mSrcImage >>    mLUT;
-    mSrcImage >>                    mRawOut;
-    mLUTImage >>    mLUT.in< 1 >();
-                    mLUT >>         mProcessedOut;
+    mSrcImage >>                mGrader >>                              mOut;
+    mSrcImage >>                mLUT >>                                 mLUTOut;
+    mLUTImage >>                mLUT.in< 1 >();
+
+    mGrade.exposure >>          mGrader.in< ColorGradeNode::exposure >();
+    mGrade.lgg >>               mGrader.in< ColorGradeNode::LGG >();
+    mGrade.temperature >>       mGrader.in< ColorGradeNode::temperature >();
+    mGrade.contrast >>          mGrader.in< ColorGradeNode::contrast >();
+    mGrade.midtone_contrast >>  mGrader.in< ColorGradeNode::midtone_contrast >();
+    mGrade.hsv >>               mGrader.in< ColorGradeNode::HSV >();
+
 
 
     /***************************************************************************
@@ -69,9 +92,67 @@ ColorApp::ColorApp() :
     mSplitX = (int)( getWindowWidth() * 0.5f );
 }
 
+void ColorApp::setup()
+{
+    mParams = params::InterfaceGl::create( getWindow(), "Color Grading", toPixels( ivec2( 200, 400 ) ) );
+
+    mParams->addParam( "Exposure", &mGrade.exposure.get() )
+            .updateFn([&]() { mGrade.exposure.update(); })
+            .min( -2.f ).max( 2.f )
+            .step( 0.05f )
+            ;
+    mParams->addParam( "Lift", &mGrade.lgg.x() )
+            .updateFn([&]() { mGrade.lgg.update(); })
+            .min( -2.f ).max( 2.f )
+            .step( 0.05f )
+            ;
+    mParams->addParam( "Gamma", &mGrade.lgg.y() )
+            .updateFn([&]() { mGrade.lgg.update(); })
+            .min( -2.f ).max( 2.f )
+            .step( 0.05f )
+            ;
+    mParams->addParam( "Gain", &mGrade.lgg.z() )
+            .updateFn([&]() { mGrade.lgg.update(); })
+            .min( -2.f ).max( 2.f )
+            .step( 0.05f )
+            ;
+    mParams->addParam( "Temperature", &mGrade.temperature.get() )
+            .updateFn([&]() { mGrade.temperature.update(); })
+            .min( 1000 ).max( 40000 )
+            .step( 100 )
+            ;
+    mParams->addParam( "Contrast", &mGrade.contrast.get() )
+            .updateFn([&]() { mGrade.contrast.update(); })
+            .min( -2.f ).max( 2.f )
+            .step( 0.05f )
+            ;
+    mParams->addParam( "Midtone Contrast", &mGrade.midtone_contrast.get() )
+            .updateFn([&]() { mGrade.midtone_contrast.update(); })
+            .min( -2.f ).max( 2.f )
+            .step( 0.05f )
+            ;
+    mParams->addParam( "Hue", &mGrade.hsv.x() )
+            .updateFn([&]() { mGrade.hsv.update(); })
+            .min( -2.f ).max( 2.f )
+            .step( 0.05f )
+            ;
+    mParams->addParam( "Saturation", &mGrade.hsv.y() )
+            .updateFn([&]() { mGrade.hsv.update(); })
+            .min( -2.f ).max( 2.f )
+            .step( 0.05f )
+            ;
+    mParams->addParam( "Value", &mGrade.hsv.z() )
+            .updateFn([&]() { mGrade.hsv.update(); })
+            .min( -2.f ).max( 2.f )
+            .step( 0.05f )
+            ;
+}
+
 void ColorApp::resize()
 {
-    mLUT.resize( getWindowSize() );
+    auto size = getWindowSize();
+    mLUT.resize( size );
+    mGrader.resize( size );
 }
 
 void ColorApp::mouseDrag( MouseEvent event )
@@ -98,16 +179,16 @@ void ColorApp::draw()
     vec2 size = getWindowSize();
     vec2 scale = vec2( mSplitX, size.y ) / size;
 
-    if ( mRawOut ) {
-        Area src( vec2(), (vec2) mRawOut.getSize() * scale );
+    if ( mOut ) {
+        Area src( vec2(), (vec2) mOut.getSize() * scale );
         Rectf dst( vec2(), size * scale );
-        gl::draw( mRawOut, src, dst );
+        gl::draw( mOut, src, dst );
     }
 
-    if ( mProcessedOut ) {
-        Area src((vec2) mProcessedOut.getSize() * scale * vec2( 1, 0 ), mProcessedOut.getSize() );
+    if ( mLUTOut ) {
+        Area src((vec2) mLUTOut.getSize() * scale * vec2( 1, 0 ), mLUTOut.getSize() );
         Rectf dst( size * scale * vec2( 1, 0 ), size );
-        gl::draw( mProcessedOut, src, dst );
+        gl::draw( mLUTOut, src, dst );
     }
 
 
@@ -116,6 +197,8 @@ void ColorApp::draw()
         gl::ScopedColor scp_color( Color( 1.f, 1.f, 1.f ) );
         gl::drawLine( vec2( mSplitX, 0 ), vec2( mSplitX, size.y ) );
     }
+
+    mParams->draw();
 }
 
 
