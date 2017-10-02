@@ -8,7 +8,7 @@ if( NOT TARGET Cinder-FrameGraph )
     get_filename_component( FrameGraph_LIB_PATH "${CMAKE_CURRENT_LIST_DIR}/../../lib" ABSOLUTE )
     get_filename_component( CINDER_PATH "${CMAKE_CURRENT_LIST_DIR}/../../../.." ABSOLUTE )
 
-		list( APPEND SOURCES
+		list( APPEND FrameGraph_SOURCES
                 ${FrameGraph_INCLUDE_PATH}/Cinder-FrameGraph.hpp
                 ${FrameGraph_INCLUDE_PATH}/Cinder-FrameGraph/Types.hpp
                 ${FrameGraph_INCLUDE_PATH}/Cinder-FrameGraph/ColorGradeNode.hpp
@@ -21,7 +21,7 @@ if( NOT TARGET Cinder-FrameGraph )
                 ${FrameGraph_LIB_PATH}/libnodes/src/libnodes/Node.cpp
                 )
 
-    add_library( Cinder-FrameGraph ${SOURCES} )
+    add_library( Cinder-FrameGraph ${FrameGraph_SOURCES} )
 
     target_include_directories( Cinder-FrameGraph PUBLIC "${FrameGraph_INCLUDE_PATH}" )
     target_include_directories( Cinder-FrameGraph PUBLIC "${FrameGraph_LIB_PATH}/libnodes/include" )

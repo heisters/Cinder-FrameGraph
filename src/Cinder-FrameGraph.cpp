@@ -23,6 +23,10 @@ void SurfaceINode::update()
 ////////////////////////////////////////////////////////////////////////////////
 // TextureINode
 
+TextureINode::TextureINode() :
+mTexture( nullptr )
+{}
+
 TextureINode::TextureINode( ImageSourceRef img ) :
 mTexture( gl::Texture2d::create( img  ) )
 {

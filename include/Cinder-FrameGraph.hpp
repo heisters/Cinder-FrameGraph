@@ -37,6 +37,7 @@ private:
 class TextureINode : public Node< Inlets<>, Outlets< gl::Texture2dRef > >
 {
 public:
+    TextureINode();
     TextureINode( ImageSourceRef img );
 
     inline ci::ivec2 getSize() const { return mTexture->getSize(); }
