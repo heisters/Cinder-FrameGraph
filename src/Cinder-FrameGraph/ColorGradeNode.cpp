@@ -194,9 +194,9 @@ ColorGradeNode::ColorGradeNode( const ci::ivec2 & size ) :
 {
     setTextureName( 0, "uTex" );
 
-    in< 0 >().onReceive( [&]( const gl::Texture2dRef & tex ) {
+    this->in< 0 >().onReceive( [&]( const gl::Texture2dRef & tex ) {
         setTexture( 0, tex );
-        out< 0 >().update( render() );
+        this->out< 0 >().update( render() );
     } );
 
     inlets()[ from< first_inlet >{} ].each_with_index( [&]( auto & inlet, size_t i ) {
