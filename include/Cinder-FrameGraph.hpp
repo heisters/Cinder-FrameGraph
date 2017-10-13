@@ -37,8 +37,13 @@ private:
 class TextureINode : public Node< Inlets<>, Outlets< gl::Texture2dRef > >
 {
 public:
+    static TextureINodeRef create( ImageSourceRef img, const ci::gl::Texture2d::Format & fmt = ci::gl::Texture2d::Format() )
+    {
+        return std::make_shared< TextureINode >( img, fmt );
+    }
+
     TextureINode();
-    TextureINode( ImageSourceRef img );
+    TextureINode( ImageSourceRef img, const ci::gl::Texture2d::Format & fmt = ci::gl::Texture2d::Format() );
 
     inline ci::ivec2 getSize() const { return mTexture->getSize(); }
 

@@ -27,8 +27,8 @@ TextureINode::TextureINode() :
 mTexture( nullptr )
 {}
 
-TextureINode::TextureINode( ImageSourceRef img ) :
-mTexture( gl::Texture2d::create( img  ) )
+TextureINode::TextureINode( ImageSourceRef img, const ci::gl::Texture2d::Format & fmt ) :
+mTexture( gl::Texture2d::create( img, fmt ) )
 {
 
 }

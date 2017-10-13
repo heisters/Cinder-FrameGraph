@@ -55,11 +55,15 @@ protected:
         mTextures[ i ] = texture;
     }
 
+public:
+
     template< typename T >
     void setUniform( const std::string & name, const T & v )
     {
         mBatch->getGlslProg()->uniform( name, v );
     }
+
+protected:
 
     virtual ci::gl::Texture2dRef render()
     {
@@ -79,6 +83,7 @@ protected:
 
             for ( uint8_t i = 0; i < mTextures.size(); ++i ) {
                 auto tex = mTextures.at( i );
+                if ( ! tex ) continue;
                 auto name = mTextureNames.at( i );
 
                 tex->bind( i );
@@ -106,7 +111,9 @@ protected:
             mBatch->draw();
 
             for ( uint8_t i = 0; i < mTextures.size(); ++i ) {
-                mTextures.at( i )->unbind();
+                auto tex = mTextures.at( i );
+                if ( ! tex ) continue;
+                tex->unbind();
             }
         }
 
