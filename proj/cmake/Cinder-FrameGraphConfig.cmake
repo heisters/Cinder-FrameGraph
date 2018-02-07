@@ -26,14 +26,14 @@ if( NOT TARGET Cinder-FrameGraph )
 
     if( ENABLE_FRAMEGRAPH_QUICKTIME )
       list( APPEND FrameGraph_SOURCES
-        ${FrameGraph_INCLUDE_PATH}/framegraph/QuickTime.hpp
-        ${FrameGraph_SOURCE_PATH}/framegraph/QuickTime.cpp
+        ${FrameGraph_INCLUDE_PATH}/cinder/framegraph/QuickTime.hpp
+        ${FrameGraph_SOURCE_PATH}/cinder/framegraph/QuickTime.cpp
         )
     endif()
     if( ENABLE_FRAMEGRAPH_LIBGLVIDEO )
       list( APPEND FrameGraph_SOURCES
-        ${FrameGraph_INCLUDE_PATH}/framegraph/GLVideo.hpp
-        ${FrameGraph_SOURCE_PATH}/framegraph/GLVideo.cpp
+        ${FrameGraph_INCLUDE_PATH}/cinder/framegraph/GLVideo.hpp
+        ${FrameGraph_SOURCE_PATH}/cinder/framegraph/GLVideo.cpp
         )
     endif()
 
