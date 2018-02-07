@@ -1,13 +1,12 @@
 #include "cinder/app/App.h"
 #include "cinder/app/RendererGl.h"
 #include "cinder/gl/gl.h"
-#include "cinder/Rect.h"
 #include "cinder/params/Params.h"
 
-#include "Cinder-FrameGraph.hpp"
-#include "Cinder-FrameGraph/LUTNode.hpp"
-#include "Cinder-FrameGraph/ColorGradeNode.hpp"
-#include "Cinder-FrameGraph/VecNode.hpp"
+#include "cinder/FrameGraph.hpp"
+#include "cinder/framegraph/LUTNode.hpp"
+#include "cinder/framegraph/ColorGradeNode.hpp"
+#include "cinder/framegraph/VecNode.hpp"
 
 using namespace ci;
 using namespace ci::app;

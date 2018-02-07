@@ -3,9 +3,9 @@
 #include "cinder/gl/Texture.h"
 #include "cinder/gl/Fbo.h"
 
-#include "Cinder-FrameGraph.hpp"
+#include "cinder/FrameGraph.hpp"
 #include "libnodes/NodeContainer.h"
-#include "Cinder-FrameGraph/Types.hpp"
+#include "cinder/framegraph/Types.hpp"
 
 namespace cinder {
 namespace frame_graph {

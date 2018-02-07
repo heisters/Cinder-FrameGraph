@@ -1,10 +1,12 @@
-#include "Cinder-FrameGraph/LUTNode.hpp"
+#include "cinder/framegraph/LUTNode.hpp"
 
 using namespace std;
 using namespace cinder;
 using namespace frame_graph;
 
 static const string VERT = R"EOF(
+#version 410
+
 uniform mat4	ciModelViewProjection;
 uniform mat4    uTexSrcMtx;
 in vec4			ciPosition;
@@ -22,7 +24,7 @@ void main( void ) {
 // based on https://github.com/mattdesl/glsl-lut
 // (c) @mattdesl, MIT License
 static const string FRAG = R"EOF(
-#version 150
+#version 410
 
 uniform sampler2D   uTexSrc;
 uniform sampler2D   uTexLUT;

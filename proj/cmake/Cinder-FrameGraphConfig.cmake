@@ -12,28 +12,28 @@ if( NOT TARGET Cinder-FrameGraph )
     get_filename_component( CINDER_PATH "${CMAKE_CURRENT_LIST_DIR}/../../../.." ABSOLUTE )
 
 		list( APPEND FrameGraph_SOURCES
-                ${FrameGraph_INCLUDE_PATH}/Cinder-FrameGraph.hpp
-                ${FrameGraph_INCLUDE_PATH}/Cinder-FrameGraph/Types.hpp
-                ${FrameGraph_INCLUDE_PATH}/Cinder-FrameGraph/ColorGradeNode.hpp
-                ${FrameGraph_INCLUDE_PATH}/Cinder-FrameGraph/LUTNode.hpp
-                ${FrameGraph_INCLUDE_PATH}/Cinder-FrameGraph/FullScreenQuadRenderer.hpp
-                ${FrameGraph_INCLUDE_PATH}/Cinder-FrameGraph/VecNode.hpp
-                ${FrameGraph_SOURCE_PATH}/Cinder-FrameGraph.cpp
-                ${FrameGraph_SOURCE_PATH}/Cinder-FrameGraph/LUTNode.cpp
-                ${FrameGraph_SOURCE_PATH}/Cinder-FrameGraph/ColorGradeNode.cpp
+                ${FrameGraph_INCLUDE_PATH}/cinder/FrameGraph.hpp
+                ${FrameGraph_INCLUDE_PATH}/cinder/framegraph/Types.hpp
+                ${FrameGraph_INCLUDE_PATH}/cinder/framegraph/ColorGradeNode.hpp
+                ${FrameGraph_INCLUDE_PATH}/cinder/framegraph/LUTNode.hpp
+                ${FrameGraph_INCLUDE_PATH}/cinder/framegraph/FullScreenQuadRenderer.hpp
+                ${FrameGraph_INCLUDE_PATH}/cinder/framegraph/VecNode.hpp
+                ${FrameGraph_SOURCE_PATH}/cinder/FrameGraph.cpp
+                ${FrameGraph_SOURCE_PATH}/cinder/framegraph/LUTNode.cpp
+                ${FrameGraph_SOURCE_PATH}/cinder/framegraph/ColorGradeNode.cpp
                 ${FrameGraph_LIB_PATH}/libnodes/src/libnodes/Node.cpp
                 )
 
     if( ENABLE_FRAMEGRAPH_QUICKTIME )
       list( APPEND FrameGraph_SOURCES
-        ${FrameGraph_INCLUDE_PATH}/Cinder-FrameGraph/QuickTime.hpp
-        ${FrameGraph_SOURCE_PATH}/Cinder-FrameGraph/QuickTime.cpp
+        ${FrameGraph_INCLUDE_PATH}/framegraph/QuickTime.hpp
+        ${FrameGraph_SOURCE_PATH}/framegraph/QuickTime.cpp
         )
     endif()
     if( ENABLE_FRAMEGRAPH_LIBGLVIDEO )
       list( APPEND FrameGraph_SOURCES
-        ${FrameGraph_INCLUDE_PATH}/Cinder-FrameGraph/GLVideo.hpp
-        ${FrameGraph_SOURCE_PATH}/Cinder-FrameGraph/GLVideo.cpp
+        ${FrameGraph_INCLUDE_PATH}/framegraph/GLVideo.hpp
+        ${FrameGraph_SOURCE_PATH}/framegraph/GLVideo.cpp
         )
     endif()
 

@@ -1,4 +1,4 @@
-#include "Cinder-FrameGraph/QuickTime.hpp"
+#include "cinder/framegraph/QuickTime.hpp"
 
 using namespace cinder;
 using namespace frame_graph;

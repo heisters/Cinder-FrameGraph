@@ -1,4 +1,4 @@
-#include "Cinder-FrameGraph/GLVideo.hpp"
+#include "cinder/framegraph/GLVideo.hpp"
 
 using namespace glvideo;
 using namespace cinder;

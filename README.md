@@ -5,9 +5,9 @@ Cinder Frame Graph is a block for [libcinder](https://libcinder.org/) that
 allows node-based image and video processing. It provides a number of nodes for
 loading images and videos to textures and processing with shaders. It
 has experimental support for [OpenColorIO](http://opencolorio.org/), a [node for
-applying LUTs](include/Cinder-FrameGraph/LUTNode.hpp) to texture sources, and
-[a color grading node](include/Cinder-FrameGraph/ColorGradeNode.hpp). It is also
-integrated with [Cinder's vector types](include/Cinder-FrameGraph/VecNode.hpp),
+applying LUTs](include/cinder/framegraph/LUTNode.hpp) to texture sources, and
+[a color grading node](include/cinder/framegraph/ColorGradeNode.hpp). It is also
+integrated with [Cinder's vector types](include/cinder/framegraph/VecNode.hpp),
 making it easy to apply transformations to vectors and use them as
 inputs/outputs with other nodes. 
 
@@ -23,8 +23,8 @@ Example
 -------
 
 ```C++
-#include "Cinder-FrameGraph.hpp"
-#include "Cinder-FrameGraph/LUTNode.hpp"
+#include "cinder/FrameGraph.hpp"
+#include "cinder/framegraph/LUTNode.hpp"
 
 using namespace ci;
 using namespace ci::app;

@@ -45,9 +45,10 @@ public:
         mModelMatrix = scale( vec3( mFbo->getSize(), 1.f ) );
     }
 
-    void setTextureName( std::size_t i, const std::string & name )
+    void setTextureName( std::size_t i, const std::string & name, bool renameMatrix = true )
     {
         mTextureNames[ i ] = name;
+        if ( renameMatrix ) mTextureMatrixNames[ i ] = name + "Mtx";
     }
 
     void setTextureMatrixName( std::size_t i, const std::string & name )
@@ -106,7 +107,7 @@ protected:
                 int loc;
                 if ( shader->findUniform( mtxName, &loc ) != nullptr ) {
                     mat4 m;
-                    if ( !tex->isTopDown()) {
+                    if ( ! tex->isTopDown() ) {
                         m = translate( vec3( 0.f, 1.f, 0.f )) *
                             scale( vec3( 1.f, -1.f, 1.f ));
                     }

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Cinder-FrameGraph.hpp"
-#include "Cinder-FrameGraph/concurrent_queue.h"
+#include "cinder/FrameGraph.hpp"
+#include "cinder/framegraph/concurrent_queue.h"
 #include "cinder/qtime/QuickTimeGl.h"
 #include "cinder/qtime/AvfWriter.h"
 #include <thread>

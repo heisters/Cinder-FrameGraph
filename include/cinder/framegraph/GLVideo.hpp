@@ -3,7 +3,7 @@
 #include "cinder/gl/gl.h"
 #include "glvideo.h"
 #include "Movie.h"
-#include "Cinder-FrameGraph.hpp"
+#include "cinder/FrameGraph.hpp"
 #include "cinder/Log.h"
 
 namespace cinder {

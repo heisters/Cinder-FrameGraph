@@ -1,4 +1,4 @@
-#include "Cinder-FrameGraph/ColorGradeNode.hpp"
+#include "cinder/framegraph/ColorGradeNode.hpp"
 
 using namespace ci;
 using namespace frame_graph;

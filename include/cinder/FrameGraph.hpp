@@ -4,8 +4,9 @@
 #include "cinder/gl/Texture.h"
 #include "cinder/Signals.h"
 #include "libnodes/Node.h"
-#include "Cinder-FrameGraph/Types.hpp"
-#include "Cinder-FrameGraph/FullScreenQuadRenderer.hpp"
+#include "libnodes/operators.h"
+#include "cinder/framegraph/Types.hpp"
+#include "cinder/framegraph/FullScreenQuadRenderer.hpp"
 
 namespace cinder{
 namespace frame_graph {
