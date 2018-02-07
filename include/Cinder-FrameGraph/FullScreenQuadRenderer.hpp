@@ -14,6 +14,7 @@ template< std::size_t I >
 class FullScreenQuadRenderer {
     std::array< ci::gl::Texture2dRef, I >   mTextures;
     std::array< std::string, I >            mTextureNames;
+    std::array< std::string, I >            mTextureMatrixNames;
     ci::gl::BatchRef                        mBatch;
     ci::gl::FboRef                          mFbo = nullptr;
     ci::mat4                                mModelMatrix;
@@ -29,8 +30,9 @@ public:
     {
         resize( size );
         mTextures.fill( nullptr );
-        for ( size_t i = 0; i < mTextureNames.size(); ++i ) {
+        for ( size_t i = 0; i < I; ++i ) {
             mTextureNames[i] = "uTexture" + std::to_string( i );
+            mTextureMatrixNames[i] = "uTexture" + std::to_string( i ) + "Mtx";
         }
 
 
@@ -46,6 +48,11 @@ public:
     void setTextureName( std::size_t i, const std::string & name )
     {
         mTextureNames[ i ] = name;
+    }
+
+    void setTextureMatrixName( std::size_t i, const std::string & name )
+    {
+        mTextureMatrixNames[ i ] = name;
     }
 
 protected:
@@ -64,6 +71,11 @@ public:
     }
 
 protected:
+
+    ci::gl::BatchRef batch() { return mBatch; }
+    ci::gl::FboRef fbo() { return mFbo; }
+
+    virtual void prepareRender() {}
 
     virtual ci::gl::Texture2dRef render()
     {
@@ -85,26 +97,30 @@ protected:
                 auto tex = mTextures.at( i );
                 if ( ! tex ) continue;
                 auto name = mTextureNames.at( i );
+                auto mtxName = mTextureMatrixNames.at( i );
 
                 tex->bind( i );
 
                 shader->uniform( name, i );
-                auto uniformName = name + "Mtx";
 
-                if ( shader->findUniform( uniformName, nullptr ) != nullptr ) {
+                int loc;
+                if ( shader->findUniform( mtxName, &loc ) != nullptr ) {
                     mat4 m;
                     if ( !tex->isTopDown()) {
                         m = translate( vec3( 0.f, 1.f, 0.f )) *
                             scale( vec3( 1.f, -1.f, 1.f ));
                     }
-                    shader->uniform( uniformName, m );
+                    shader->uniform( loc, m );
                 }
             }
 
 
-            if ( shader->findUniform( "uSize", nullptr ) != nullptr ) {
-                shader->uniform( "uSize", vec2( mFbo->getSize()));
+            int loc;
+            if ( shader->findUniform( "uSize", &loc ) != nullptr ) {
+                shader->uniform( loc, vec2( mFbo->getSize()));
             }
+
+            prepareRender();
 
             gl::clear();
 
