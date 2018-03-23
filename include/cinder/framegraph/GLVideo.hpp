@@ -37,6 +37,7 @@ public:
 	GLVideoINode & seekToStart() { mMovie->seekToStart(); return *this; }
 	GLVideoINode & seek( glvideo::seconds secs ) { mMovie->seek( secs ); return *this; }
 
+    glvideo::seconds getDuration() const { return mMovie->getDuration(); }
     glvideo::seconds getElapsedTime() const { return mMovie->getElapsedTime(); }
 	glvideo::seconds getRemainingTime() const { return mMovie->getRemainingTime(); }
 
