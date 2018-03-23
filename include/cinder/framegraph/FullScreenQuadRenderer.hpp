@@ -6,6 +6,9 @@
 #include "cinder/gl/Batch.h"
 #include "cinder/GeomIo.h"
 #include "cinder/gl/gl.h"
+#include "cinder/FileWatcher.h"
+#include "cinder/app/App.h"
+#include "cinder/Log.h"
 
 namespace cinder {
 namespace frame_graph {
@@ -20,22 +23,64 @@ class FullScreenQuadRenderer {
     ci::mat4                                mModelMatrix;
 
 public:
-
+    typedef std::true_type WATCH;
     FullScreenQuadRenderer( const ci::gl::GlslProgRef &shader,
-                            const ci::ivec2 &size ) :
-            mBatch( ci::gl::Batch::create(
-                    ci::geom::Rect() >> ci::geom::Translate( 0.5f, 0.5f ),
-                    shader )
-            )
+                            const ci::ivec2 &size )
     {
-        resize( size );
+        mBatch = ci::gl::Batch::create( ci::geom::Rect() >> ci::geom::Translate( 0.5f, 0.5f ), shader );
         mTextures.fill( nullptr );
         for ( size_t i = 0; i < I; ++i ) {
             mTextureNames[i] = "uTexture" + std::to_string( i );
             mTextureMatrixNames[i] = "uTexture" + std::to_string( i ) + "Mtx";
         }
 
+        resize( size );
+    }
 
+    FullScreenQuadRenderer( const ci::gl::GlslProg::Format & format,
+                            const ci::ivec2 &size ) :
+        FullScreenQuadRenderer( ci::gl::GlslProg::create( format ), size )
+    {}
+
+    FullScreenQuadRenderer( DataSourceRef vertexShader,
+                            DataSourceRef fragmentShader,
+                            const ci::ivec2 &size ) :
+        FullScreenQuadRenderer( ci::gl::GlslProg::create( vertexShader, fragmentShader ), size )
+    {}
+
+    FullScreenQuadRenderer( DataSourceRef vertexShader,
+                            DataSourceRef fragmentShader,
+                            const ci::ivec2 &size,
+                            WATCH watch,
+                            std::function< void( const WatchEvent& ) > watchCb = [](const WatchEvent&){} ) :
+        FullScreenQuadRenderer( ci::gl::GlslProg::create( vertexShader, fragmentShader ), size )
+    {
+        watchShader( vertexShader, fragmentShader, watchCb );
+    }
+
+    void watchShader( DataSourceRef vertexShader,
+                      DataSourceRef fragmentShader,
+                      std::function< void( const WatchEvent& ) > watchCb = [](const WatchEvent&){} )
+    {
+        CI_LOG_I( "WATCH SHADER " << vertexShader->getFilePath() );
+
+        vector< ci::fs::path > paths{ vertexShader->getFilePath(), fragmentShader->getFilePath() };
+        FileWatcher::instance().watch( paths, [this, paths, watchCb]( const WatchEvent &event ) {
+            watchCb( event );
+
+            try {
+                auto v = ci::DataSourcePath::create( paths[0] );
+                auto f = ci::DataSourcePath::create( paths[1] );
+                auto g = ci::gl::GlslProg::create( v, f );
+                mBatch->replaceGlslProg( g );
+
+                CI_LOG_I( "Reloaded shader: " << paths[0] << ", " << paths[1] );
+            }
+            catch( const std::exception &e ) {
+                CI_LOG_EXCEPTION( "Error reloading shader: " << paths[0] << ", " << paths[1], e );
+            }
+
+        } );
     }
 
     virtual void resize( const ci::ivec2 & size )

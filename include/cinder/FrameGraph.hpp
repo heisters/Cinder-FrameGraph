@@ -99,22 +99,63 @@ class TextureShaderIONode :
         public FullScreenQuadRenderer< I >
 {
 public:
+    typedef FullScreenQuadRenderer< I >::WATCH WATCH;
+
     static TextureShaderIONodeRef< I > create( const ci::gl::GlslProgRef & shader, const ci::ivec2 & size )
     {
         return std::make_shared< TextureShaderIONode >( shader, size );
     }
+
+    static TextureShaderIONodeRef< I > create( const ci::gl::GlslProg::Format & format, const ci::ivec2 & size )
+    {
+        return std::make_shared< TextureShaderIONode >( format, size );
+    }
+
+    static TextureShaderIONodeRef< I > create( ci::DataSourceRef vertexShader, ci::DataSourceRef fragmentShader, const ci::ivec2 & size )
+    {
+        return std::make_shared< TextureShaderIONode >( vertexShader, fragmentShader, size );
+    }
+
+    static TextureShaderIONodeRef< I > create( ci::DataSourceRef vertexShader, ci::DataSourceRef fragmentShader, const ci::ivec2 & size, WATCH watch, std::function< void( const WatchEvent& ) > watchCb = [](const WatchEvent&){} )
+    {
+        return std::make_shared< TextureShaderIONode >( vertexShader, fragmentShader, size, watch, watchCb );
+    }
+
     TextureShaderIONode( const ci::gl::GlslProgRef & shader, const ci::ivec2 & size ) :
         FullScreenQuadRenderer< I >( shader, size )
     {
-        using namespace ci;
+        listen();
+    }
 
+    TextureShaderIONode( const ci::gl::GlslProg::Format & format, const ci::ivec2 & size ) :
+        FullScreenQuadRenderer< I >( format, size )
+    {
+        listen();
+    }
+
+    TextureShaderIONode( ci::DataSourceRef vertexShader, ci::DataSourceRef fragmentShader, const ci::ivec2 & size ) :
+        FullScreenQuadRenderer< I >( vertexShader, fragmentShader, size )
+    {
+        listen();
+    }
+
+    TextureShaderIONode( ci::DataSourceRef vertexShader, ci::DataSourceRef fragmentShader, const ci::ivec2 & size, WATCH watch, std::function< void( const WatchEvent& ) > watchCb = [](const WatchEvent&){} ) :
+        FullScreenQuadRenderer< I >( vertexShader, fragmentShader, size, watch, watchCb )
+    {
+        listen();
+    }
+
+protected:
+    void listen()
+    {
         this->inlets().each_with_index( [&]( auto & inlet, size_t i ) {
-            inlet.onReceive( [&, i]( const gl::Texture2dRef & tex ) {
+            inlet.onReceive( [&, i]( const ci::gl::Texture2dRef & tex ) {
                 update( i, tex );
             } );
         } );
-
     }
+
+public:
 
     virtual void update( std::size_t i, const ci::gl::Texture2dRef & texture )
     {
