@@ -18,6 +18,12 @@ GLVideoINode::GLVideoINode( const glvideo::Movie::ref & movie ) :
 {
 }
 
+GLVideoINode::GLVideoINode( const GLVideoINode & original ) :
+    mMovie( Movie::create( *original.getMovie() ) )
+{
+
+}
+
 void GLVideoINode::update()
 {
     mMovie->update();

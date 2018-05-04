@@ -26,8 +26,14 @@ public:
         return std::make_shared< GLVideoINode >( movie );
     }
 
+	static GLVideoINodeRef create( const GLVideoINode & original )
+	{
+		return std::make_shared< GLVideoINode >( original );
+	}
+
 	GLVideoINode( const glvideo::Context::ref & context, const ci::fs::path & path, bool playImmediately = true );
 	GLVideoINode( const glvideo::Movie::ref & movie );
+	explicit GLVideoINode( const GLVideoINode & original );
 
 	virtual void update() override;
 
@@ -36,10 +42,12 @@ public:
 	GLVideoINode & stop() { mMovie->stop(); return *this; }
 	GLVideoINode & seekToStart() { mMovie->seekToStart(); return *this; }
 	GLVideoINode & seek( glvideo::seconds secs ) { mMovie->seek( secs ); return *this; }
+	GLVideoINode & setPlaybackRate( float rate ) { mMovie->setPlaybackRate( rate ); return *this; }
 
     glvideo::seconds getDuration() const { return mMovie->getDuration(); }
     glvideo::seconds getElapsedTime() const { return mMovie->getElapsedTime(); }
 	glvideo::seconds getRemainingTime() const { return mMovie->getRemainingTime(); }
+	float getPlaybackRate() const { return mMovie->getPlaybackRate(); }
 
     bool isPlaying() const { return mMovie->isPlaying(); }
 
