@@ -111,6 +111,11 @@ public:
         return std::make_shared< TextureShaderIONode >( format, size );
     }
 
+    static TextureShaderIONodeRef< I > create( const ci::gl::GlslProg::Format & format, const ci::ivec2 & size, WATCH watch, std::function< void( const WatchEvent& ) > watchCb = [](const WatchEvent&){} )
+    {
+        return std::make_shared< TextureShaderIONode >( format, size, watch, watchCb );
+    }
+
     static TextureShaderIONodeRef< I > create( ci::DataSourceRef vertexShader, ci::DataSourceRef fragmentShader, const ci::ivec2 & size )
     {
         return std::make_shared< TextureShaderIONode >( vertexShader, fragmentShader, size );
@@ -129,6 +134,12 @@ public:
 
     TextureShaderIONode( const ci::gl::GlslProg::Format & format, const ci::ivec2 & size ) :
         FullScreenQuadRenderer< I >( format, size )
+    {
+        listen();
+    }
+
+    TextureShaderIONode( const ci::gl::GlslProg::Format & format, const ci::ivec2 & size, WATCH watch, std::function< void( const WatchEvent& ) > watchCb = [](const WatchEvent&){} ) :
+        FullScreenQuadRenderer< I >( format, size, watch, watchCb )
     {
         listen();
     }

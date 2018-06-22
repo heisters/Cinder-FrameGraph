@@ -42,6 +42,15 @@ public:
         FullScreenQuadRenderer( ci::gl::GlslProg::create( format ), size )
     {}
 
+    FullScreenQuadRenderer( const ci::gl::GlslProg::Format & format,
+                            const ci::ivec2 &size,
+                            WATCH watch,
+                            std::function< void( const WatchEvent& ) > watchCb = [](const WatchEvent&){} ) :
+        FullScreenQuadRenderer( ci::gl::GlslProg::create( format ), size )
+    {
+        watchShader( format, watchCb );
+    }
+
     FullScreenQuadRenderer( DataSourceRef vertexShader,
                             DataSourceRef fragmentShader,
                             const ci::ivec2 &size ) :
@@ -58,29 +67,36 @@ public:
         watchShader( vertexShader, fragmentShader, watchCb );
     }
 
+    void watchShader( const ci::gl::GlslProg::Format & format,
+                      std::function< void( const WatchEvent& ) > watchCb = [](const WatchEvent&){} )
+    {
+        CI_LOG_I( "WATCH SHADER " << format.getVertexPath() );
+
+        std::vector< ci::fs::path > paths{ format.getVertexPath(), format.getFragmentPath() };
+        FileWatcher::instance().watch( paths, [this, format, watchCb]( const WatchEvent &event ) {
+            watchCb( event );
+
+            try {
+                auto fmt = format;
+                fmt.vertex( ci::DataSourcePath::create( format.getVertexPath() ) );
+                fmt.fragment( ci::DataSourcePath::create( format.getFragmentPath() ) );
+                auto g = ci::gl::GlslProg::create( fmt );
+                mBatch->replaceGlslProg( g );
+
+                CI_LOG_I( "Reloaded shader: " << format.getVertexPath() << ", " << format.getFragmentPath() );
+            }
+            catch( const std::exception &e ) {
+                CI_LOG_EXCEPTION( "Error reloading shader: " << format.getVertexPath() << ", " << format.getFragmentPath(), e );
+            }
+
+        } );
+    }
+
     void watchShader( DataSourceRef vertexShader,
                       DataSourceRef fragmentShader,
                       std::function< void( const WatchEvent& ) > watchCb = [](const WatchEvent&){} )
     {
-        CI_LOG_I( "WATCH SHADER " << vertexShader->getFilePath() );
-
-        std::vector< ci::fs::path > paths{ vertexShader->getFilePath(), fragmentShader->getFilePath() };
-        FileWatcher::instance().watch( paths, [this, paths, watchCb]( const WatchEvent &event ) {
-            watchCb( event );
-
-            try {
-                auto v = ci::DataSourcePath::create( paths[0] );
-                auto f = ci::DataSourcePath::create( paths[1] );
-                auto g = ci::gl::GlslProg::create( v, f );
-                mBatch->replaceGlslProg( g );
-
-                CI_LOG_I( "Reloaded shader: " << paths[0] << ", " << paths[1] );
-            }
-            catch( const std::exception &e ) {
-                CI_LOG_EXCEPTION( "Error reloading shader: " << paths[0] << ", " << paths[1], e );
-            }
-
-        } );
+        watchShader( ci::gl::GlslProg::Format().vertex( vertexShader ).fragment( fragmentShader ), watchCb );
     }
 
     virtual void resize( const ci::ivec2 & size )
