@@ -15,12 +15,25 @@ Frame Graph also makes it easy to define your own node-based data-flow
 applications. It is based on [libnodes](https://github.com/heisters/libnodes),
 which provides a type-safe node architecture. New node classes can easily be
 defined to process any data type, whether text, JSON, or OpenCV matrices. While
-it works well with external libraries like [OpenCV](http://opencv.org/) or
-[libglvideo](https://github.com/heisters/libglvideo), direct support is
-currently omitted in the interest of reducing dependencies.
+it works well with external libraries like [OpenCV](http://opencv.org/), direct
+support is currently omitted in the interest of reducing dependencies.
 
-Example
--------
+Getting Cinder Frame Graph
+--------------------------
+
+Frame Graph depends on libnodes and, optionally, libglvideo. To install Frame
+Graph and its dependencies, clone the Frame Graph repo into your `Cinder/blocks`
+directory:
+
+    cd Cinder/blocks
+    # on older versions of git, use --recursive instead of --recurse-submodules
+    git clone --recurse-submodules git@github.com:heisters/Cinder-FrameGraph
+
+libglvideo support is not enabled by default. See below for details on how to
+use it.
+
+A Brief Example
+---------------
 
 ```C++
 #include "cinder/FrameGraph.hpp"
@@ -70,6 +83,56 @@ Cinder Frame Graph uses CMake. It has a
 [Cinder Block CMake config](proj/cmake/Cinder-FrameGraphConfig.cmake), you can
 see an [example of its usage](examples/Color/proj/cmake/CMakeLists.txt) in the
 Color example project.
+
+libglvideo support
+------------------
+
+To enable [libglvideo](https://github.com/heisters/libglvideo) support, set
+ENABLE_FRAMEGRAPH_LIBGLVIDEO in your CMakeLists.txt file before calling
+`ci_make_app()`:
+
+    set(ENABLE_FRAMEGRAPH_LIBGLVIDEO ON CACHE BOOL "Enable FrameGraph libglvideo support")
+
+Provided you have properly cloned Frame Graph's submodule dependencies, this
+will automatically find libglvideo, build it, and link it.
+
+With libglvideo support enabled, you will need two nodes to read and decode
+a HAPQ video:
+
+```C++
+#include "cinder/framegraph/GLVideo.hpp"
+
+// ...
+
+// Create a glvideo context that will be shared by all movies. The number
+// of worker threads depends on the number of available CPU cores and the
+// number of videos you anticipate to need to decode simultaneously.
+glvideo::Context::ref ctx = glvideo::Context::create( 4 /* worker threads */ );
+
+// Create the movie control node
+GLVideoINode movie( ctx, "path/to/a/hapq_video.mp4" );
+
+// Create the YUV -> RGB decoding node
+GLVideoHapQDecodeShaderIONode decoder( movie.getSize() );
+
+// Create a texture output node
+TextureONode out;
+
+// Start the movie and loop it
+movie.play().loop();
+
+// Setup the node graph
+movie >> decoder >> out;
+
+// update the movie once per frame:
+movie.update();
+
+// draw the movie
+if ( out ) gl::draw( out );
+```
+
+See the [Color example project](examples/Color/README.md) for a full example.
+
 
 MIT License
 -----------
