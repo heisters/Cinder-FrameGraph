@@ -4,3 +4,6 @@
 [submodule "lib/libnodes"]
 	path = lib/libnodes
 	url = git@github.com:heisters/libnodes.git
+[submodule "lib/libglvideo"]
+	path = lib/libglvideo
+	url = git@github.com:heisters/libglvideo.git

@@ -16,14 +16,15 @@ static const std::map< ColorGradeNode::inlet_names, std::string > INLET_NAME_STR
 
 static const string VERT = R"EOF(
 uniform mat4	ciModelViewProjection;
+uniform mat4    uTexMtx;
 in vec4			ciPosition;
 in vec2			ciTexCoord0;
 out vec2		uv;
 
 void main( void ) {
     gl_Position	= ciModelViewProjection * ciPosition;
-    uv = ciTexCoord0;
-    uv.y = 1. - uv.y;
+    vec4 texCoord = uTexMtx * vec4( ciTexCoord0, 0., 1. );
+    uv = texCoord.st / texCoord.q;
 }
 )EOF";
 

@@ -64,7 +64,7 @@ public:
     {
         CI_LOG_I( "WATCH SHADER " << vertexShader->getFilePath() );
 
-        vector< ci::fs::path > paths{ vertexShader->getFilePath(), fragmentShader->getFilePath() };
+        std::vector< ci::fs::path > paths{ vertexShader->getFilePath(), fragmentShader->getFilePath() };
         FileWatcher::instance().watch( paths, [this, paths, watchCb]( const WatchEvent &event ) {
             watchCb( event );
 

@@ -4,6 +4,9 @@
 #include "cinder/params/Params.h"
 
 #include "cinder/FrameGraph.hpp"
+#ifdef USE_GLVIDEO
+#include "cinder/framegraph/GLVideo.hpp"
+#endif
 #include "cinder/framegraph/LUTNode.hpp"
 #include "cinder/framegraph/ColorGradeNode.hpp"
 #include "cinder/framegraph/VecNode.hpp"
@@ -28,14 +31,21 @@ public:
 
 private:
 
-    TextureINode                mSrcImage, mLUTImage;
-    TextureONode                mOut, mLUTOut;
-    LUTNode                     mLUT;
-    ColorGradeNode              mGrader;
+#ifdef USE_GLVIDEO
+    glvideo::Context::ref           mVideoCtx;
+    GLVideoINode                    mSrc;
+    GLVideoHapQDecodeShaderIONode   mSrcDecoder;
+#else
+    TextureINode                    mSrc;
+#endif
+    TextureINode                    mLUTImage;
+    TextureONode                    mOut, mLUTOut;
+    LUTNode                         mLUT;
+    ColorGradeNode                  mGrader;
 
-    int							mSplitX;
+    int							    mSplitX;
 
-    params::InterfaceGlRef	    mParams;
+    params::InterfaceGlRef	        mParams;
 
     struct grade {
         nodes::ValueNodef exposure{ 0.f };
@@ -45,11 +55,17 @@ private:
         nodes::ValueNodef midtone_contrast{ 0.f };
         Vec3Node<> hsv{ vec3( 0.f, 0.f, 0.f ) };
     };
-    grade                       mGrade;
+    grade                           mGrade;
 };
 
 ColorApp::ColorApp() :
-    mSrcImage( loadImage( getOpenFilePath() ) ),
+#ifdef USE_GLVIDEO
+    mVideoCtx( glvideo::Context::create( 1 ) ),
+    mSrc( mVideoCtx, getOpenFilePath( fs::path(), {"mp4", "mov"} ) ),
+    mSrcDecoder( mSrc.getSize() ),
+#else
+    mSrc( loadImage( getOpenFilePath( fs::path(), {"jpg", "png"} ) ) ),
+#endif
     mLUTImage( loadImage( getAssetPath( "luts/K_TONE_Kodachrome.png" ) ) ),
     mLUT( getWindowSize() ),
     mGrader( getWindowSize() )
@@ -57,10 +73,16 @@ ColorApp::ColorApp() :
     /***************************************************************************
      * Create node graph
      */
+#ifdef USE_GLVIDEO
+    mSrc.play().loop();
+    mSrc >> mSrcDecoder;
+    auto & src = mSrcDecoder;
+#else
+    auto & src = mSrc;
+#endif
 
-
-    mSrcImage >>                mGrader >>                              mOut;
-    mSrcImage >>                mLUT >>                                 mLUTOut;
+    src >>                      mGrader >>                              mOut;
+    src >>                      mLUT >>                                 mLUTOut;
     mLUTImage >>                mLUT.in< 1 >();
 
     mGrade.exposure >>          mGrader.in< ColorGradeNode::exposure >();
@@ -77,7 +99,7 @@ ColorApp::ColorApp() :
      */
 
 
-    ivec2 size = mSrcImage.getSize();
+    ivec2 size = mSrc.getSize();
     ivec2 dsize = getDisplay()->getSize();
     ivec2 maxSize = dsize - ivec2( 100 );
 
@@ -168,7 +190,7 @@ void ColorApp::mouseDown( MouseEvent event )
 
 void ColorApp::update()
 {
-    mSrcImage.update();
+    mSrc.update();
     mLUTImage.update();
 }
 

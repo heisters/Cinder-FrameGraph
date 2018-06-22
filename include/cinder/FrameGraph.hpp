@@ -99,7 +99,7 @@ class TextureShaderIONode :
         public FullScreenQuadRenderer< I >
 {
 public:
-    typedef FullScreenQuadRenderer< I >::WATCH WATCH;
+    typedef typename FullScreenQuadRenderer< I >::WATCH WATCH;
 
     static TextureShaderIONodeRef< I > create( const ci::gl::GlslProgRef & shader, const ci::ivec2 & size )
     {

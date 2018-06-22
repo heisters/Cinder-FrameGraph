@@ -3,6 +3,13 @@ cmake_minimum_required( VERSION 3.0 FATAL_ERROR )
 
 project( FrameGraph-ColorExample )
 
+option(ENABLE_GLVIDEO "use video through libglvideo, instead of Cinder's built-in static image loading" OFF)
+
+if(ENABLE_GLVIDEO)
+    set(ENABLE_FRAMEGRAPH_LIBGLVIDEO ON CACHE BOOL "Enable FrameGraph libglvideo support")
+    add_definitions(-DUSE_GLVIDEO)
+endif(ENABLE_GLVIDEO)
+
 get_filename_component( CINDER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../.." ABSOLUTE )
 get_filename_component( APP_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE )
 
