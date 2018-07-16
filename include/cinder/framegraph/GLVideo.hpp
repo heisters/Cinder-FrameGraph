@@ -44,6 +44,7 @@ public:
 	GLVideoINode & seek( glvideo::seconds secs ) { mMovie->seek( secs ); return *this; }
 	GLVideoINode & setPlaybackRate( float rate ) { mMovie->setPlaybackRate( rate ); return *this; }
 
+    std::string getFilename() const { return mMovie->getFilename(); }
     glvideo::seconds getDuration() const { return mMovie->getDuration(); }
     glvideo::seconds getElapsedTime() const { return mMovie->getElapsedTime(); }
 	glvideo::seconds getRemainingTime() const { return mMovie->getRemainingTime(); }
