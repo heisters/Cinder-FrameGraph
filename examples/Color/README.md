@@ -45,5 +45,5 @@ This option can also be set in the configurations for VSCode, CLion or whatever
 other IDE you may be using.
 
 Once configured, ColorApp will only open MP4 and MOV files with MJPEG or HAPQ
-encoding. It will allow you to open MP4s and MOVs with other encodings, but it
+encoding. It will allow you to select MP4s and MOVs with other encodings, but it
 will crash with an unsupported codec error.
